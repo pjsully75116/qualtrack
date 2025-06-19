@@ -1,0 +1,187 @@
+<Window x:Class="QualTrack.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="QualTrack - Navy Arms Qualification Manager" Height="600" Width="1000">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Menu Bar -->
+        <Menu Grid.Row="0">
+            <MenuItem Header="File">
+                <MenuItem Header="Export Qualifications" Click="ExportQualifications_Click"/>
+                <MenuItem Header="Load Test Data" Click="LoadTestData_Click"/>
+                <Separator/>
+                <MenuItem Header="Exit" Click="Exit_Click"/>
+            </MenuItem>
+            <MenuItem Header="Personnel">
+                <MenuItem Header="Add Personnel" Click="AddPersonnel_Click"/>
+                <MenuItem Header="View All Personnel" Click="ViewPersonnel_Click"/>
+            </MenuItem>
+            <MenuItem Header="Qualifications">
+                <MenuItem Header="Add Qualification" Click="AddQualification_Click"/>
+                <MenuItem Header="View All Qualifications" Click="ViewQualifications_Click"/>
+            </MenuItem>
+        </Menu>
+        
+        <!-- Main Content -->
+        <TabControl x:Name="MainTabControl" Grid.Row="1" Margin="10">
+            <TabItem Header="Dashboard">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Filter Controls -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Label Content="Filter by Status:" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="StatusFilterComboBox" Width="150" Margin="5,0" 
+                                  SelectionChanged="StatusFilter_SelectionChanged">
+                            <ComboBoxItem Content="All"/>
+                            <ComboBoxItem Content="Qualified"/>
+                            <ComboBoxItem Content="Sustainment Due"/>
+                            <ComboBoxItem Content="Disqualified"/>
+                        </ComboBox>
+                        <Button Content="Refresh" Click="Refresh_Click" Margin="10,0"/>
+                    </StackPanel>
+                    
+                    <!-- Personnel List -->
+                    <DataGrid x:Name="PersonnelDataGrid" Grid.Row="1" 
+                              AutoGenerateColumns="False" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="150"/>
+                            <DataGridTextColumn Header="Rate" Binding="{Binding Rate}" Width="80"/>
+                            <DataGridTextColumn Header="Duty Sections" Binding="{Binding DutySectionsDisplay}" Width="200"/>
+                            <DataGridTextColumn Header="Weapons" Binding="{Binding WeaponsDisplay}" Width="150"/>
+                            <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="100"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+            
+            <TabItem Header="Add Qualification">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <Label Grid.Row="0" Grid.Column="0" Content="Name:" Margin="0,5"/>
+                    <TextBox x:Name="NameTextBox" Grid.Row="0" Grid.Column="1" Margin="10,5"/>
+                    
+                    <Label Grid.Row="1" Grid.Column="0" Content="DOD ID:" Margin="0,5"/>
+                    <TextBox x:Name="DODIdTextBox" Grid.Row="1" Grid.Column="1" Margin="10,5"/>
+                    
+                    <Label Grid.Row="2" Grid.Column="0" Content="Rate:" Margin="0,5"/>
+                    <TextBox x:Name="RateTextBox" Grid.Row="2" Grid.Column="1" Margin="10,5"/>
+                    
+                    <Label Grid.Row="3" Grid.Column="0" Content="Weapon:" Margin="0,5"/>
+                    <ComboBox x:Name="WeaponComboBox" Grid.Row="3" Grid.Column="1" Margin="10,5" SelectionChanged="WeaponComboBox_SelectionChanged"/>
+                    
+                    <Label Grid.Row="4" Grid.Column="0" Content="Category:" Margin="0,5"/>
+                    <ComboBox x:Name="CategoryComboBox" Grid.Row="4" Grid.Column="1" Margin="10,5" SelectionChanged="CategoryComboBox_SelectionChanged">
+                        <ComboBoxItem Content="CAT I"/>
+                        <ComboBoxItem Content="CAT II"/>
+                        <ComboBoxItem Content="CAT III"/>
+                        <ComboBoxItem Content="CAT IV"/>
+                    </ComboBox>
+                    
+                    <Label Grid.Row="5" Grid.Column="0" Content="Date Qualified:" Margin="0,5"/>
+                    <DatePicker x:Name="DateQualifiedPicker" Grid.Row="5" Grid.Column="1" Margin="10,5"/>
+                    
+                    <Label Grid.Row="6" Grid.Column="0" Content="6 Section Duty:" Margin="0,5"/>
+                    <ListBox x:Name="DutySections6ListBox" Grid.Row="6" Grid.Column="1" Margin="10,5" SelectionMode="Multiple"/>
+
+                    <Label Grid.Row="7" Grid.Column="0" Content="3 Section Duty:" Margin="0,5"/>
+                    <ListBox x:Name="DutySections3ListBox" Grid.Row="7" Grid.Column="1" Margin="10,5" SelectionMode="Multiple"/>
+                    
+                    <Button Grid.Row="8" Grid.Column="1" Content="Add Qualification" 
+                            Click="AddQualificationButton_Click" Margin="10,20,10,10" Padding="20,5"/>
+                    <Button Grid.Row="8" Grid.Column="0" Content="Quick Add Another Qualification" 
+                            Click="QuickAddAnotherQualificationButton_Click" Margin="10,20,10,10" Padding="20,5"/>
+                    
+                    <!-- CAT II (M9) Details - initially collapsed, shown only if CAT II and M9 -->
+                    <StackPanel x:Name="CatII_M9_DetailsPanel" Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0" Visibility="Collapsed">
+                        <GroupBox Header="CAT II (M9) Details">
+                            <Grid Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Grid.Row="0" Grid.Column="0" Content="NHQC Score:" Margin="0,5"/>
+                                <TextBox x:Name="NHQCScoreTextBox" Grid.Row="0" Grid.Column="1" Margin="10,5"/>
+                                <Label Grid.Row="1" Grid.Column="0" Content="HLLC Score:" Margin="0,5"/>
+                                <TextBox x:Name="HLLCScoreTextBox" Grid.Row="1" Grid.Column="1" Margin="10,5"/>
+                                <Label Grid.Row="2" Grid.Column="0" Content="HPWC Score:" Margin="0,5"/>
+                                <TextBox x:Name="HPWCScoreTextBox" Grid.Row="2" Grid.Column="1" Margin="10,5"/>
+                                <Label Grid.Row="3" Grid.Column="0" Content="Instructor:" Margin="0,5"/>
+                                <TextBox x:Name="InstructorTextBox" Grid.Row="3" Grid.Column="1" Margin="10,5"/>
+                                <Label Grid.Row="4" Grid.Column="0" Content="Remarks:" Margin="0,5"/>
+                                <TextBox x:Name="RemarksTextBox" Grid.Row="4" Grid.Column="1" Margin="10,5"/>
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                    <!-- CAT II (M4/M16) Details - initially collapsed, shown only if CAT II and M4/M16 -->
+                    <StackPanel x:Name="CatII_M4M16_DetailsPanel" Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0" Visibility="Collapsed">
+                        <GroupBox Header="CAT II (M4/M16) Details">
+                            <Grid Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Grid.Row="0" Grid.Column="0" Content="RQC Score:" Margin="0,5"/>
+                                <TextBox x:Name="RQCScoreTextBox" Grid.Row="0" Grid.Column="1" Margin="10,5"/>
+                                <Label Grid.Row="1" Grid.Column="0" Content="RLC Score:" Margin="0,5"/>
+                                <TextBox x:Name="RLCScoreTextBox" Grid.Row="1" Grid.Column="1" Margin="10,5"/>
+                                <Label Grid.Row="2" Grid.Column="0" Content="Instructor:" Margin="0,5"/>
+                                <TextBox x:Name="RifleInstructorTextBox" Grid.Row="2" Grid.Column="1" Margin="10,5"/>
+                                <Label Grid.Row="3" Grid.Column="0" Content="Remarks:" Margin="0,5"/>
+                                <TextBox x:Name="RifleRemarksTextBox" Grid.Row="3" Grid.Column="1" Margin="10,5"/>
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                    <!-- Move StatusTextBlock to Grid.Row 11 -->
+                    <TextBlock x:Name="StatusTextBlock" Grid.Row="11" Grid.Column="0" Grid.ColumnSpan="2" Margin="10" Foreground="Red"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window> 
