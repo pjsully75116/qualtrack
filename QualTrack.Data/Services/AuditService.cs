@@ -57,10 +57,35 @@ namespace QualTrack.Data.Services
         /// <summary>
         /// Logs qualification-related actions
         /// </summary>
-        public async Task LogQualificationActionAsync(string action, string personnelName, string weapon, int category, int? userId = null)
+        public async Task LogQualificationActionAsync(string action, string personnel, string weapon, int category)
         {
-            var details = $"Personnel: {personnelName}, Weapon: {weapon}, Category: {category}";
-            await LogEventAsync(action, details, userId);
+            var connection = _dbContext.GetConnection();
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                INSERT INTO audit_log (action, personnel, weapon, category, timestamp) 
+                VALUES (@action, @personnel, @weapon, @category, @timestamp)";
+            command.Parameters.AddWithValue("@action", action);
+            command.Parameters.AddWithValue("@personnel", personnel);
+            command.Parameters.AddWithValue("@weapon", weapon);
+            command.Parameters.AddWithValue("@category", category);
+            command.Parameters.AddWithValue("@timestamp", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            await command.ExecuteNonQueryAsync();
+        }
+
+        public async Task LogQualificationAddedAsync(int personnelId, string weapon, int category, DateTime dateQualified)
+        {
+            var connection = _dbContext.GetConnection();
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                INSERT INTO audit_log (action, personnel_id, weapon, category, qualification_date, timestamp) 
+                VALUES (@action, @personnelId, @weapon, @category, @qualificationDate, @timestamp)";
+            command.Parameters.AddWithValue("@action", "Qualification Added");
+            command.Parameters.AddWithValue("@personnelId", personnelId);
+            command.Parameters.AddWithValue("@weapon", weapon);
+            command.Parameters.AddWithValue("@category", category);
+            command.Parameters.AddWithValue("@qualificationDate", dateQualified.ToString("yyyy-MM-dd"));
+            command.Parameters.AddWithValue("@timestamp", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            await command.ExecuteNonQueryAsync();
         }
 
         /// <summary>

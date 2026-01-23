@@ -1,4 +1,5 @@
 using QualTrack.Core.Models;
+using QualTrack.Data.Database;
 
 namespace QualTrack.Data.Repositories
 {
@@ -7,14 +8,14 @@ namespace QualTrack.Data.Repositories
     /// </summary>
     public interface IQualificationRepository
     {
-        Task<List<Qualification>> GetQualificationsForPersonnelAsync(int personnelId);
-        Task<List<Qualification>> GetAllQualificationsAsync();
-        Task<Qualification?> GetQualificationByIdAsync(int id);
-        Task<int> AddQualificationAsync(Qualification qualification);
-        Task<bool> UpdateQualificationAsync(Qualification qualification);
-        Task<bool> DeleteQualificationAsync(int id);
-        Task<bool> QualificationExistsAsync(int personnelId, string weapon);
-        Task<List<Qualification>> GetExpiringQualificationsAsync(int daysThreshold);
-        Task<List<Qualification>> GetQualificationsNeedingSustainmentAsync();
+        Task<List<Qualification>> GetQualificationsForPersonnelAsync(DatabaseContext dbContext, int personnelId);
+        Task<List<Qualification>> GetAllQualificationsAsync(DatabaseContext dbContext);
+        Task<Qualification?> GetQualificationByIdAsync(DatabaseContext dbContext, int id);
+        Task<int> AddQualificationAsync(DatabaseContext dbContext, Qualification qualification);
+        Task<bool> UpdateQualificationAsync(DatabaseContext dbContext, Qualification qualification);
+        Task<bool> DeleteQualificationAsync(DatabaseContext dbContext, int id);
+        Task<bool> QualificationExistsAsync(DatabaseContext dbContext, int personnelId, string weapon);
+        Task<List<Qualification>> GetExpiringQualificationsAsync(DatabaseContext dbContext, int daysThreshold);
+        Task<List<Qualification>> GetQualificationsNeedingSustainmentAsync(DatabaseContext dbContext);
     }
 } 

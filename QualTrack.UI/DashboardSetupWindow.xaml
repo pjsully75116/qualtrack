@@ -1,0 +1,74 @@
+<Window x:Class="QualTrack.UI.DashboardSetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Dashboard Setup" Height="500" Width="400"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Icon="/QTv1.ico">
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Select columns to display on dashboard:" 
+                   FontSize="16" FontWeight="Bold" 
+                   Margin="0,0,0,20"/>
+        
+        <!-- Column Options -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <GroupBox Header="Basic Information" Margin="0,0,0,10">
+                    <StackPanel Margin="10">
+                        <CheckBox x:Name="NameCheckBox" Content="Name" IsChecked="True" Margin="0,5"/>
+                        <CheckBox x:Name="RateCheckBox" Content="Rate" IsChecked="True" Margin="0,5"/>
+                    </StackPanel>
+                </GroupBox>
+                
+                <GroupBox Header="Duty Sections" Margin="0,0,0,10">
+                    <StackPanel Margin="10">
+                        <CheckBox x:Name="DutySection3CheckBox" Content="3 Section" IsChecked="True" Margin="0,5"/>
+                        <CheckBox x:Name="DutySection6CheckBox" Content="6 Section" IsChecked="True" Margin="0,5"/>
+                    </StackPanel>
+                </GroupBox>
+                
+                <GroupBox Header="Weapon Qualifications" Margin="0,0,0,10">
+                    <StackPanel Margin="10">
+                        <CheckBox x:Name="M9CheckBox" Content="M9" IsChecked="True" Margin="0,5"/>
+                        <CheckBox x:Name="M4M16CheckBox" Content="M4/M16" IsChecked="True" Margin="0,5"/>
+                        <CheckBox x:Name="M500CheckBox" Content="M500" IsChecked="True" Margin="0,5"/>
+                        <CheckBox x:Name="M240CheckBox" Content="M240" IsChecked="True" Margin="0,5"/>
+                        <CheckBox x:Name="M2CheckBox" Content="M2" IsChecked="True" Margin="0,5"/>
+                    </StackPanel>
+                </GroupBox>
+                
+                <GroupBox Header="Status Information" Margin="0,0,0,10">
+                    <StackPanel Margin="10">
+                        <CheckBox x:Name="DateQualifiedCheckBox" Content="Date Qualified" IsChecked="True" Margin="0,5"/>
+                        <CheckBox x:Name="LapsedQualificationsCheckBox" Content="Lapsed Qualifications" IsChecked="True" Margin="0,5"/>
+                    </StackPanel>
+                </GroupBox>
+                
+                <GroupBox Header="Admin Requirements" Margin="0,0,0,10">
+                    <StackPanel Margin="10">
+                        <CheckBox x:Name="AdminCheckBox" Content="Admin Status" IsChecked="True" Margin="0,5"/>
+                        <CheckBox x:Name="Form2760CheckBox" Content="Form 2760" IsChecked="False" Margin="0,5"/>
+                        <CheckBox x:Name="AAEScreeningCheckBox" Content="AA&amp;E Screening" IsChecked="False" Margin="0,5"/>
+                        <CheckBox x:Name="DeadlyForceTrainingCheckBox" Content="Deadly Force Training" IsChecked="False" Margin="0,5"/>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Select All" Click="SelectAll_Click" Width="80" Height="30" Margin="5"/>
+            <Button Content="Deselect All" Click="DeselectAll_Click" Width="80" Height="30" Margin="5"/>
+            <Button Content="Apply" Click="Apply_Click" Width="80" Height="30" Margin="5" IsDefault="True"/>
+            <Button Content="Cancel" Click="Cancel_Click" Width="80" Height="30" Margin="5" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window> 

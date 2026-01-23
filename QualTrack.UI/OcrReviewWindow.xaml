@@ -1,0 +1,77 @@
+<Window x:Class="QualTrack.UI.OcrReviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="OCR Review" Height="700" Width="900" 
+        WindowStartupLocation="CenterScreen">
+    
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock x:Name="DocumentTitleText" FontSize="16" FontWeight="Bold" Text="Document: [Document Name]"/>
+            <TextBlock x:Name="ConfidenceText" FontSize="12" Foreground="#666666" Text="Confidence: [X]%"/>
+        </StackPanel>
+
+        <!-- Page Navigation (for multi-page documents) -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10" x:Name="PageNavigationPanel" Visibility="Collapsed">
+            <TextBlock Text="Page:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <ComboBox x:Name="PageComboBox" Width="100" Margin="0,0,10,0" SelectionChanged="PageComboBox_SelectionChanged"/>
+            <TextBlock x:Name="PageInfoText" Text="Page 1 of 1" VerticalAlignment="Center" FontStyle="Italic" Foreground="#666666"/>
+        </StackPanel>
+
+        <!-- Instructions -->
+        <TextBlock Grid.Row="2" Text="Review the extracted text below. You can edit it if needed, then approve or reject." 
+                   Margin="0,0,0,10" FontStyle="Italic" Foreground="#666666"/>
+
+        <!-- Extracted Text Area -->
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Original Extracted Text -->
+            <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                <TextBlock Text="Extracted Text:" FontWeight="Bold" Margin="0,0,0,5"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" 
+                              Background="#F9F9F9" BorderBrush="#CCCCCC" BorderThickness="1">
+                    <TextBlock x:Name="ExtractedTextBlock" Text="[Extracted text will appear here]" 
+                               Padding="10" TextWrapping="Wrap" FontFamily="Consolas"/>
+                </ScrollViewer>
+            </StackPanel>
+
+            <!-- Divider -->
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" Background="#CCCCCC"/>
+
+            <!-- Editable Text -->
+            <StackPanel Grid.Column="2" Margin="5,0,0,0">
+                <TextBlock Text="Corrected Text:" FontWeight="Bold" Margin="0,0,0,5"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" 
+                              Background="White" BorderBrush="#CCCCCC" BorderThickness="1">
+                    <TextBox x:Name="CorrectedTextBox" AcceptsReturn="True" AcceptsTab="True" 
+                             Padding="10" FontFamily="Consolas" TextWrapping="Wrap" 
+                             VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+                </ScrollViewer>
+            </StackPanel>
+        </Grid>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button x:Name="CopyToCorrectedButton" Content="Copy to Corrected" Width="120" Height="30" 
+                    Margin="0,0,10,0" Click="CopyToCorrectedButton_Click"/>
+            <Button x:Name="ApproveButton" Content="Approve" Width="80" Height="30" 
+                    Margin="0,0,10,0" Click="ApproveButton_Click" Background="#4CAF50" Foreground="White"/>
+            <Button x:Name="RejectButton" Content="Reject" Width="80" Height="30" 
+                    Margin="0,0,10,0" Click="RejectButton_Click" Background="#F44336" Foreground="White"/>
+            <Button x:Name="CloseButton" Content="Close" Width="80" Height="30" Click="CloseButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window> 

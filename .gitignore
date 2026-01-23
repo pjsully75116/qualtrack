@@ -1,0 +1,65 @@
+## Visual Studio / Visual Studio Code
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## NuGet Packages
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+
+## SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
+## PDF files (templates should be tracked, but generated PDFs should not)
+**/bin/**/*.pdf
+**/obj/**/*.pdf
+Documents/**/*.pdf
+!**/bin/Debug/net8.0-windows/win-x64/*.pdf
+!**/bin/Debug/net8.0-windows/win-x64/dd2760_QualTrack.pdf
+!**/bin/Debug/net8.0-windows/win-x64/5530_1 QualTrack.pdf
+
+## Temporary files
+*.tmp
+*.temp
+*.backup
+*.bak
+*~
+
+## OS files
+.DS_Store
+Thumbs.db
+
+## IDE specific
+*.swp
+*.swo
+*~

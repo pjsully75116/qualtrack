@@ -1,7 +1,8 @@
 <Window x:Class="QualTrack.UI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="QualTrack - Navy Arms Qualification Manager" Height="600" Width="1000">
+        Title="QualTrack - Navy Arms Qualification Manager" Height="600" Width="1000"
+        Icon="/QTv1.ico">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -32,104 +33,248 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     
                     <!-- Filter Controls -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
                         <Label Content="Filter by Status:" VerticalAlignment="Center"/>
-                        <ComboBox x:Name="StatusFilterComboBox" Width="150" Margin="5,0" 
-                                  SelectionChanged="StatusFilter_SelectionChanged">
+                        <ComboBox x:Name="StatusFilterComboBox" Width="150" Margin="5,0" SelectionChanged="StatusFilter_SelectionChanged">
                             <ComboBoxItem Content="All"/>
                             <ComboBoxItem Content="Qualified"/>
                             <ComboBoxItem Content="Sustainment Due"/>
-                            <ComboBoxItem Content="Disqualified"/>
+                            <ComboBoxItem Content="Lapsed"/>
                         </ComboBox>
-                        <Button Content="Refresh" Click="Refresh_Click" Margin="10,0"/>
+                        <Label Content="Filter by Duty Section Type:" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                        <ComboBox x:Name="DutySectionTypeFilterComboBox" Width="100" Margin="5,0" SelectionChanged="DutySectionFilter_SelectionChanged">
+                            <ComboBoxItem Content="All"/>
+                            <ComboBoxItem Content="3 Section"/>
+                            <ComboBoxItem Content="6 Section"/>
+                        </ComboBox>
+                        <Label Content="Section Number:" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        <ComboBox x:Name="DutySectionNumberFilterComboBox" Width="80" Margin="5,0" SelectionChanged="DutySectionNumberFilterComboBox_SelectionChanged">
+                            <ComboBoxItem Content="All"/>
+                            <!-- Numbers will be populated dynamically -->
+                        </ComboBox>
+                        <Label Content="Filter by Weapon:" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                        <ComboBox x:Name="WeaponFilterComboBox" Width="100" Margin="5,0" SelectionChanged="WeaponFilter_SelectionChanged">
+                            <ComboBoxItem Content="All"/>
+                            <ComboBoxItem Content="M9"/>
+                            <ComboBoxItem Content="M4/M16"/>
+                            <ComboBoxItem Content="M500"/>
+                            <ComboBoxItem Content="M240"/>
+                            <ComboBoxItem Content="M2"/>
+                        </ComboBox>
+                    </StackPanel>
+                    
+                    <!-- Dashboard Controls and Color Legend -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button Content="Dashboard Setup" Click="DashboardSetup_Click" Margin="0,0,10,0" Padding="15,5"/>
+                        <Button Content="Refresh" Click="Refresh_Click" Margin="0,0,20,0" Padding="15,5"/>
+                        
+                        <!-- Color Legend -->
+                        <TextBlock Text="Weapon Qualification Colors: " FontWeight="Bold" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                        <Border Background="LightGreen" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
+                            <TextBlock Text="Green = Valid" FontSize="10"/>
+                        </Border>
+                        <Border Background="Yellow" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
+                            <TextBlock Text="Yellow = Sustainment Due" FontSize="10"/>
+                        </Border>
+                        <Border Background="Orange" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
+                            <TextBlock Text="Orange = Expires in 30 days" FontSize="10"/>
+                        </Border>
+                        <Border Background="Transparent" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
+                            <TextBlock Text="No Color = Not Qualified" FontSize="10"/>
+                        </Border>
+                        <Border Background="Green" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
+                            <TextBlock Text="Green = Valid DD2760" FontSize="10"/>
+                        </Border>
+                        <Border Background="Orange" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
+                            <TextBlock Text="Orange = DD2760 Expires Soon" FontSize="10"/>
+                        </Border>
+                        <Border Background="Red" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
+                            <TextBlock Text="Red = DD2760 Expired" FontSize="10"/>
+                        </Border>
                     </StackPanel>
                     
                     <!-- Personnel List -->
-                    <DataGrid x:Name="PersonnelDataGrid" Grid.Row="1" 
-                              AutoGenerateColumns="False" IsReadOnly="True">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="150"/>
-                            <DataGridTextColumn Header="Rate" Binding="{Binding Rate}" Width="80"/>
-                            <DataGridTextColumn Header="Duty Sections" Binding="{Binding DutySectionsDisplay}" Width="200"/>
-                            <DataGridTextColumn Header="Weapons" Binding="{Binding WeaponsDisplay}" Width="150"/>
-                            <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="100"/>
-                        </DataGrid.Columns>
+                    <DataGrid x:Name="PersonnelDataGrid" Grid.Row="2" 
+                              AutoGenerateColumns="False" 
+                              CanUserAddRows="False" 
+                              CanUserDeleteRows="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              GridLinesVisibility="Horizontal"
+                              HeadersVisibility="Column"
+                              EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              VirtualizingPanel.ScrollUnit="Pixel"
+                              VirtualizingPanel.CacheLength="5,5"
+                              RowHeight="25"
+                              AlternatingRowBackground="LightGray"
+                              MouseDoubleClick="PersonnelDataGrid_MouseDoubleClick">
+                        <!-- Columns will be added dynamically based on dashboard settings -->
                     </DataGrid>
                 </Grid>
             </TabItem>
             
-            <TabItem Header="Add Qualification">
-                <Grid Margin="20">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    
-                    <Label Grid.Row="0" Grid.Column="0" Content="Name:" Margin="0,5"/>
-                    <TextBox x:Name="NameTextBox" Grid.Row="0" Grid.Column="1" Margin="10,5"/>
-                    
-                    <Label Grid.Row="1" Grid.Column="0" Content="DOD ID:" Margin="0,5"/>
-                    <TextBox x:Name="DODIdTextBox" Grid.Row="1" Grid.Column="1" Margin="10,5"/>
-                    
-                    <Label Grid.Row="2" Grid.Column="0" Content="Rate:" Margin="0,5"/>
-                    <TextBox x:Name="RateTextBox" Grid.Row="2" Grid.Column="1" Margin="10,5"/>
-                    
-                    <Label Grid.Row="3" Grid.Column="0" Content="Weapon:" Margin="0,5"/>
-                    <ComboBox x:Name="WeaponComboBox" Grid.Row="3" Grid.Column="1" Margin="10,5" SelectionChanged="WeaponComboBox_SelectionChanged"/>
-                    
-                    <Label Grid.Row="4" Grid.Column="0" Content="Category:" Margin="0,5"/>
-                    <ComboBox x:Name="CategoryComboBox" Grid.Row="4" Grid.Column="1" Margin="10,5" SelectionChanged="CategoryComboBox_SelectionChanged">
-                        <ComboBoxItem Content="CAT I"/>
-                        <ComboBoxItem Content="CAT II"/>
-                        <ComboBoxItem Content="CAT III"/>
-                        <ComboBoxItem Content="CAT IV"/>
-                    </ComboBox>
-                    
-                    <Label Grid.Row="5" Grid.Column="0" Content="Date Qualified:" Margin="0,5"/>
-                    <DatePicker x:Name="DateQualifiedPicker" Grid.Row="5" Grid.Column="1" Margin="10,5"/>
-                    
-                    <Label Grid.Row="6" Grid.Column="0" Content="6 Section Duty:" Margin="0,5"/>
-                    <ListBox x:Name="DutySections6ListBox" Grid.Row="6" Grid.Column="1" Margin="10,5" SelectionMode="Multiple"/>
-
-                    <Label Grid.Row="7" Grid.Column="0" Content="3 Section Duty:" Margin="0,5"/>
-                    <ListBox x:Name="DutySections3ListBox" Grid.Row="7" Grid.Column="1" Margin="10,5" SelectionMode="Multiple"/>
-                    
-                    <Button Grid.Row="8" Grid.Column="1" Content="Add Qualification" 
-                            Click="AddQualificationButton_Click" Margin="10,20,10,10" Padding="20,5"/>
-                    <Button Grid.Row="8" Grid.Column="0" Content="Quick Add Another Qualification" 
-                            Click="QuickAddAnotherQualificationButton_Click" Margin="10,20,10,10" Padding="20,5"/>
-                    
-                    <!-- CAT II (M9) Details - initially collapsed, shown only if CAT II and M9 -->
-                    <StackPanel x:Name="CatII_M9_DetailsPanel" Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0" Visibility="Collapsed">
-                        <GroupBox Header="CAT II (M9) Details">
+            <TabItem Header="Add Admin">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <Grid Margin="20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="200"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Find Sailor Section -->
+                        <GroupBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Header="Find Existing Sailor" Margin="0,0,0,20">
                             <Grid Margin="10">
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <Label Grid.Row="0" Grid.Column="0" Content="Search by Last Name:" VerticalAlignment="Center" Margin="0,5"/>
+                                <TextBox x:Name="SearchLastNameTextBox" Grid.Row="0" Grid.Column="1" Margin="10,5" Width="180" KeyDown="SearchLastNameTextBox_KeyDown"/>
+                                <Button Grid.Row="0" Grid.Column="2" Content="Search" Click="SearchSailor_Click" Margin="10,5" Padding="15,5"/>
+                                <TextBlock Grid.Row="0" Grid.Column="3" x:Name="SearchResultTextBlock" Margin="10,5" VerticalAlignment="Center" Foreground="Gray"/>
+                                
+                                <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Text="Or fill out the form below to create a new sailor" 
+                                           Margin="10,5,0,0" FontStyle="Italic" Foreground="Gray"/>
+                            </Grid>
+                        </GroupBox>
+                        
+                        <!-- Sailor Information -->
+                        <GroupBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Header="Sailor Information" Margin="0,0,0,20">
+                            <Grid Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="200"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <Label Grid.Row="0" Grid.Column="0" Content="Last Name:" Margin="0,5"/>
+                                <TextBox x:Name="AdminLastNameTextBox" Grid.Row="0" Grid.Column="1" Margin="10,5"/>
+                                <Label Grid.Row="0" Grid.Column="2" Content="First Name:" Margin="0,5"/>
+                                <TextBox x:Name="AdminFirstNameTextBox" Grid.Row="0" Grid.Column="3" Margin="10,5"/>
+                                
+                                <Label Grid.Row="1" Grid.Column="0" Content="DOD ID:" Margin="0,5"/>
+                                <TextBox x:Name="AdminDODIdTextBox" Grid.Row="1" Grid.Column="1" Margin="10,5" PreviewTextInput="AdminDODIdTextBox_PreviewTextInput" ToolTip="Numbers only. Must be exactly 10 digits."/>
+                                <Label Grid.Row="1" Grid.Column="2" Content="Rate:" Margin="0,5"/>
+                                <ComboBox x:Name="AdminRateComboBox" Grid.Row="1" Grid.Column="3" Margin="10,5">
+                                    <ComboBoxItem Content="ET"/>
+                                    <ComboBoxItem Content="GM"/>
+                                    <ComboBoxItem Content="BM"/>
+                                    <ComboBoxItem Content="EM"/>
+                                    <ComboBoxItem Content="MM"/>
+                                    <ComboBoxItem Content="HT"/>
+                                    <ComboBoxItem Content="DC"/>
+                                    <ComboBoxItem Content="YN"/>
+                                    <ComboBoxItem Content="PS"/>
+                                    <ComboBoxItem Content="LS"/>
+                                    <ComboBoxItem Content="CS"/>
+                                    <ComboBoxItem Content="SH"/>
+                                    <ComboBoxItem Content="SK"/>
+                                    <ComboBoxItem Content="HM"/>
+                                    <ComboBoxItem Content="MA"/>
+                                    <ComboBoxItem Content="OS"/>
+                                    <ComboBoxItem Content="QM"/>
+                                    <ComboBoxItem Content="ST"/>
+                                    <ComboBoxItem Content="AB"/>
+                                    <ComboBoxItem Content="AM"/>
+                                    <ComboBoxItem Content="AD"/>
+                                    <ComboBoxItem Content="AE"/>
+                                    <ComboBoxItem Content="AT"/>
+                                    <ComboBoxItem Content="AZ"/>
+                                    <ComboBoxItem Content="CT"/>
+                                    <ComboBoxItem Content="ET"/>
+                                    <ComboBoxItem Content="FC"/>
+                                    <ComboBoxItem Content="FT"/>
+                                    <ComboBoxItem Content="GM"/>
+                                    <ComboBoxItem Content="GS"/>
+                                    <ComboBoxItem Content="IC"/>
+                                    <ComboBoxItem Content="IS"/>
+                                    <ComboBoxItem Content="IT"/>
+                                    <ComboBoxItem Content="MC"/>
+                                    <ComboBoxItem Content="MN"/>
+                                    <ComboBoxItem Content="MT"/>
+                                    <ComboBoxItem Content="NC"/>
+                                    <ComboBoxItem Content="ND"/>
+                                    <ComboBoxItem Content="PR"/>
+                                    <ComboBoxItem Content="QM"/>
+                                    <ComboBoxItem Content="RP"/>
+                                    <ComboBoxItem Content="RS"/>
+                                    <ComboBoxItem Content="SB"/>
+                                    <ComboBoxItem Content="SM"/>
+                                    <ComboBoxItem Content="ST"/>
+                                    <ComboBoxItem Content="SW"/>
+                                    <ComboBoxItem Content="TM"/>
+                                    <ComboBoxItem Content="UT"/>
+                                    <ComboBoxItem Content="YN"/>
+                                </ComboBox>
+                                
+                                <Label Grid.Row="2" Grid.Column="0" Content="Rank:" Margin="0,5"/>
+                                <ComboBox x:Name="AdminRankComboBox" Grid.Row="2" Grid.Column="1" Margin="10,5">
+                                    <ComboBoxItem Content="E-1"/>
+                                    <ComboBoxItem Content="E-2"/>
+                                    <ComboBoxItem Content="E-3"/>
+                                    <ComboBoxItem Content="E-4"/>
+                                    <ComboBoxItem Content="E-5"/>
+                                    <ComboBoxItem Content="E-6"/>
+                                    <ComboBoxItem Content="E-7"/>
+                                    <ComboBoxItem Content="E-8"/>
+                                    <ComboBoxItem Content="E-9"/>
+                                    <ComboBoxItem Content="O-1"/>
+                                    <ComboBoxItem Content="O-2"/>
+                                    <ComboBoxItem Content="O-3"/>
+                                    <ComboBoxItem Content="O-4"/>
+                                    <ComboBoxItem Content="O-5"/>
+                                    <ComboBoxItem Content="O-6"/>
+                                    <ComboBoxItem Content="O-7"/>
+                                    <ComboBoxItem Content="O-8"/>
+                                    <ComboBoxItem Content="O-9"/>
+                                    <ComboBoxItem Content="O-10"/>
+                                </ComboBox>
+                            </Grid>
+                        </GroupBox>
+                        
+                        <!-- Form 2760 (Lautenberg Act) -->
+                        <GroupBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Header="Form 2760 (Lautenberg Act)" Margin="0,0,0,20">
+                            <Grid Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
@@ -139,25 +284,83 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="200"/>
                                 </Grid.ColumnDefinitions>
-                                <Label Grid.Row="0" Grid.Column="0" Content="NHQC Score:" Margin="0,5"/>
-                                <TextBox x:Name="NHQCScoreTextBox" Grid.Row="0" Grid.Column="1" Margin="10,5"/>
-                                <Label Grid.Row="1" Grid.Column="0" Content="HLLC Score:" Margin="0,5"/>
-                                <TextBox x:Name="HLLCScoreTextBox" Grid.Row="1" Grid.Column="1" Margin="10,5"/>
-                                <Label Grid.Row="2" Grid.Column="0" Content="HPWC Score:" Margin="0,5"/>
-                                <TextBox x:Name="HPWCScoreTextBox" Grid.Row="2" Grid.Column="1" Margin="10,5"/>
-                                <Label Grid.Row="3" Grid.Column="0" Content="Instructor:" Margin="0,5"/>
-                                <TextBox x:Name="InstructorTextBox" Grid.Row="3" Grid.Column="1" Margin="10,5"/>
-                                <Label Grid.Row="4" Grid.Column="0" Content="Remarks:" Margin="0,5"/>
-                                <TextBox x:Name="RemarksTextBox" Grid.Row="4" Grid.Column="1" Margin="10,5"/>
+                                
+                                <!-- Domestic Violence Question -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Text="Have you been convicted of a crime of domestic violence?" 
+                                           FontWeight="Bold" Margin="0,5,0,10"/>
+                                
+                                <!-- Yes/No/Unknown Options -->
+                                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,5">
+                                    <CheckBox x:Name="DD2760YesCheckBox" Content="Yes (Initial)" Margin="0,0,10,0" Checked="DD2760Response_Changed" Unchecked="DD2760Response_Changed"/>
+                                    <TextBox x:Name="DD2760YesInitialsTextBox" Width="80" Margin="0,0,20,0" IsEnabled="{Binding ElementName=DD2760YesCheckBox, Path=IsChecked}"/>
+                                    <CheckBox x:Name="DD2760NoCheckBox" Content="No (Initial)" Margin="0,0,10,0" Checked="DD2760Response_Changed" Unchecked="DD2760Response_Changed"/>
+                                    <TextBox x:Name="DD2760NoInitialsTextBox" Width="80" Margin="0,0,20,0" IsEnabled="{Binding ElementName=DD2760NoCheckBox, Path=IsChecked}"/>
+                                    <CheckBox x:Name="DD2760UnknownCheckBox" Content="Unknown (Initial)" Margin="0,0,10,0" Checked="DD2760Response_Changed" Unchecked="DD2760Response_Changed"/>
+                                    <TextBox x:Name="DD2760UnknownInitialsTextBox" Width="80" Margin="0,0,20,0" IsEnabled="{Binding ElementName=DD2760UnknownCheckBox, Path=IsChecked}"/>
+                                </StackPanel>
+                                
+                                <DatePicker x:Name="DD2760DomesticViolenceDatePicker" Grid.Row="1" Grid.Column="3" Margin="10,5,0,5"/>
+                                
+                                <!-- If Yes Section -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Text="If yes:" FontWeight="Bold" Margin="0,15,0,10"/>
+                                
+                                <Label Grid.Row="3" Grid.Column="0" Content="Court/Jurisdiction:" Margin="0,5"/>
+                                <TextBox x:Name="DD2760CourtJurisdictionTextBox" Grid.Row="3" Grid.Column="1" Margin="10,5"/>
+                                
+                                <Label Grid.Row="3" Grid.Column="2" Content="Docket/Case Number:" Margin="10,5,5,5"/>
+                                <TextBox x:Name="DD2760DocketCaseNumberTextBox" Grid.Row="3" Grid.Column="3" Margin="5,5,0,5"/>
+                                
+                                <Label Grid.Row="4" Grid.Column="0" Content="Statute/Charge:" Margin="0,5"/>
+                                <TextBox x:Name="DD2760StatuteChargeTextBox" Grid.Row="4" Grid.Column="1" Margin="10,5"/>
+                                
+                                <Label Grid.Row="4" Grid.Column="2" Content="Date Sentenced:" Margin="10,5,5,5"/>
+                                <DatePicker x:Name="DD2760DateSentencedPicker" Grid.Row="4" Grid.Column="3" Margin="5,5,0,5"/>
+                                
+                                <!-- Certification Section -->
+                                <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4" Orientation="Horizontal" Margin="0,15,0,5">
+                                    <CheckBox x:Name="DD2760CertificationCheckBox" Margin="0,0,10,0"/>
+                                    <TextBlock Text="I hereby certify that, to the best of my information and belief, all the information I have provided is true..." 
+                                               TextWrapping="Wrap" VerticalAlignment="Center" Foreground="Gray" FontStyle="Italic"/>
+                                </StackPanel>
+                                
+                                <Label Grid.Row="6" Grid.Column="0" Content="SSN:" Margin="0,5"/>
+                                <TextBox x:Name="DD2760SSNTextBox" Grid.Row="6" Grid.Column="1" Width="150" Margin="10,5"/>
+                                
+                                <Label Grid.Row="6" Grid.Column="2" Content="Date Signed:" Margin="10,5,5,5"/>
+                                <DatePicker x:Name="DD2760DateSignedPicker" Grid.Row="6" Grid.Column="3" Margin="5,5,0,5"/>
+                                
+                                <TextBlock Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="4" Text="Annual requirement - expires 1 year from completion date" 
+                                           Margin="0,10,0,5" Foreground="Gray" FontStyle="Italic"/>
+                                
+                                <!-- Submit Button -->
+                                <Button Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="4" Content="Submit 2760" 
+                                        Click="Submit2760Button_Click" HorizontalAlignment="Right" Margin="0,10,0,0" Padding="20,5"/>
                             </Grid>
                         </GroupBox>
-                    </StackPanel>
-                    <!-- CAT II (M4/M16) Details - initially collapsed, shown only if CAT II and M4/M16 -->
-                    <StackPanel x:Name="CatII_M4M16_DetailsPanel" Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0" Visibility="Collapsed">
-                        <GroupBox Header="CAT II (M4/M16) Details">
+                        
+                        <!-- AA&E Screening -->
+                        <GroupBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" Header="AA&amp;E Screening" Margin="0,0,0,20">
                             <Grid Margin="10">
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
@@ -166,22 +369,713 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Label Grid.Row="0" Grid.Column="0" Content="RQC Score:" Margin="0,5"/>
-                                <TextBox x:Name="RQCScoreTextBox" Grid.Row="0" Grid.Column="1" Margin="10,5"/>
-                                <Label Grid.Row="1" Grid.Column="0" Content="RLC Score:" Margin="0,5"/>
-                                <TextBox x:Name="RLCScoreTextBox" Grid.Row="1" Grid.Column="1" Margin="10,5"/>
-                                <Label Grid.Row="2" Grid.Column="0" Content="Instructor:" Margin="0,5"/>
-                                <TextBox x:Name="RifleInstructorTextBox" Grid.Row="2" Grid.Column="1" Margin="10,5"/>
-                                <Label Grid.Row="3" Grid.Column="0" Content="Remarks:" Margin="0,5"/>
-                                <TextBox x:Name="RifleRemarksTextBox" Grid.Row="3" Grid.Column="1" Margin="10,5"/>
+                                
+                                <!-- Person Being Screened (auto-populated from search) -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Text="Person Being Screened: (Auto-populated from search above)" 
+                                           FontWeight="Bold" Margin="0,5,0,10" Foreground="Gray" FontStyle="Italic"/>
+                                
+                                <!-- Screener/Qualifier -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Text="Screener/Qualifier:" 
+                                           FontWeight="Bold" Margin="0,5,0,10"/>
+                                
+                                <Label Grid.Row="2" Grid.Column="0" Content="Name:" Margin="0,5"/>
+                                <TextBox x:Name="AAENameScreenerTextBox" Grid.Row="2" Grid.Column="1" Margin="10,5"/>
+                                
+                                <Label Grid.Row="2" Grid.Column="2" Content="Rank:" Margin="10,5,5,5"/>
+                                <TextBox x:Name="AAERankScreenerTextBox" Grid.Row="2" Grid.Column="3" Margin="5,5,0,5"/>
+                                
+                                <Label Grid.Row="3" Grid.Column="0" Content="DOD ID:" Margin="0,5"/>
+                                <TextBox x:Name="AAEDODIDScreenerTextBox" Grid.Row="3" Grid.Column="1" Margin="10,5"/>
+                                
+                                <!-- Questions Header -->
+                                <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" Text="Screening Questions:" 
+                                           FontWeight="Bold" Margin="0,15,0,10"/>
+                                
+                                <!-- Questions Table Header -->
+                                <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,0,0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="2*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="SUBJECT" FontWeight="Bold" Margin="0,5"/>
+                                    <TextBlock Grid.Column="1" Text="YES" FontWeight="Bold" HorizontalAlignment="Center" Margin="10,5"/>
+                                    <TextBlock Grid.Column="2" Text="NO" FontWeight="Bold" HorizontalAlignment="Center" Margin="10,5"/>
+                                    <TextBlock Grid.Column="3" Text="N/A" FontWeight="Bold" HorizontalAlignment="Center" Margin="10,5"/>
+                                    <TextBlock Grid.Column="4" Text="REMARKS" FontWeight="Bold" Margin="10,5"/>
+                                </Grid>
+                                
+                                <!-- Question 1 -->
+                                <Grid Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="2*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Margin="0,5" TextWrapping="Wrap">
+                                        <Run Text="1. Has the individual qualified with the required"/>
+                                        <LineBreak/>
+                                        <Run Text="security weapon in the last 12 months?"/>
+                                    </TextBlock>
+                                    <CheckBox x:Name="AAEQuestion1YCheckBox" Grid.Column="1" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion1_Changed" Unchecked="AAEQuestion1_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion1NCheckBox" Grid.Column="2" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion1_Changed" Unchecked="AAEQuestion1_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion1NACheckBox" Grid.Column="3" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion1_Changed" Unchecked="AAEQuestion1_Changed"/>
+                                    <TextBox x:Name="AAERemarks1TextBox" Grid.Column="4" Margin="10,5" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40" VerticalAlignment="Top"/>
+                                </Grid>
+                                
+                                <!-- Question 2 -->
+                                <Grid Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="2*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Margin="0,5" TextWrapping="Wrap">
+                                        <Run Text="2. Individual's medical record has been screened by a"/>
+                                        <LineBreak/>
+                                        <Run Text="competent medical authority. There are no medical"/>
+                                        <LineBreak/>
+                                        <Run Text="conditions that would prevent the individual from duties"/>
+                                        <LineBreak/>
+                                        <Run Text="involving control of or unescorted access to AA&amp;E"/>
+                                    </TextBlock>
+                                    <CheckBox x:Name="AAEQuestion2YCheckBox" Grid.Column="1" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion2_Changed" Unchecked="AAEQuestion2_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion2NCheckBox" Grid.Column="2" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion2_Changed" Unchecked="AAEQuestion2_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion2NACheckBox" Grid.Column="3" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion2_Changed" Unchecked="AAEQuestion2_Changed"/>
+                                    <TextBox x:Name="AAERemarks2TextBox" Grid.Column="4" Margin="10,5" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40" VerticalAlignment="Top"/>
+                                </Grid>
+                                
+                                <!-- Question 3 -->
+                                <Grid Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="2*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Margin="0,5" TextWrapping="Wrap">
+                                        <Run Text="3. Has the individual had National Agency Check with"/>
+                                        <LineBreak/>
+                                        <Run Text="Local Agency and Credit Checks (NACLC) or Access National"/>
+                                        <LineBreak/>
+                                        <Run Text="Agency Check with Written Inquiries (ANACI) completed?"/>
+                                    </TextBlock>
+                                    <CheckBox x:Name="AAEQuestion3YCheckBox" Grid.Column="1" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion3_Changed" Unchecked="AAEQuestion3_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion3NCheckBox" Grid.Column="2" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion3_Changed" Unchecked="AAEQuestion3_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion3NACheckBox" Grid.Column="3" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion3_Changed" Unchecked="AAEQuestion3_Changed"/>
+                                    <TextBox x:Name="AAERemarks3TextBox" Grid.Column="4" Margin="10,5" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40" VerticalAlignment="Top"/>
+                                </Grid>
+                                
+                                <!-- Question 4 -->
+                                <Grid Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="2*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Margin="0,5" TextWrapping="Wrap">
+                                        <Run Text="4. Has the individual completed instruction in the use of"/>
+                                        <LineBreak/>
+                                        <Run Text="force in the last 12 months and signed a use of force"/>
+                                        <LineBreak/>
+                                        <Run Text="certification if required to be armed in the performance"/>
+                                        <LineBreak/>
+                                        <Run Text="of higher duties?"/>
+                                    </TextBlock>
+                                    <CheckBox x:Name="AAEQuestion4YCheckBox" Grid.Column="1" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion4_Changed" Unchecked="AAEQuestion4_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion4NCheckBox" Grid.Column="2" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion4_Changed" Unchecked="AAEQuestion4_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion4NACheckBox" Grid.Column="3" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion4_Changed" Unchecked="AAEQuestion4_Changed"/>
+                                    <TextBox x:Name="AAERemarks4TextBox" Grid.Column="4" Margin="10,5" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40" VerticalAlignment="Top"/>
+                                </Grid>
+                                
+                                <!-- Question 5 -->
+                                <Grid Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="2*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Margin="0,5" TextWrapping="Wrap">
+                                        <Run Text="5. Was any derogatory information noted in the personnel"/>
+                                        <LineBreak/>
+                                        <Run Text="record that would prohibit this individual from being"/>
+                                        <LineBreak/>
+                                        <Run Text="assigned duties involving control of or unescorted access"/>
+                                        <LineBreak/>
+                                        <Run Text="to AA&amp;E?"/>
+                                    </TextBlock>
+                                    <CheckBox x:Name="AAEQuestion5YCheckBox" Grid.Column="1" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion5_Changed" Unchecked="AAEQuestion5_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion5NCheckBox" Grid.Column="2" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion5_Changed" Unchecked="AAEQuestion5_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion5NACheckBox" Grid.Column="3" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion5_Changed" Unchecked="AAEQuestion5_Changed"/>
+                                    <TextBox x:Name="AAERemarks5TextBox" Grid.Column="4" Margin="10,5" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40" VerticalAlignment="Top"/>
+                                </Grid>
+                                
+                                <!-- Question 6 -->
+                                <Grid Grid.Row="11" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="2*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Margin="0,5" TextWrapping="Wrap">
+                                        <Run Text="6. Individual has no pending legal action and/or"/>
+                                        <LineBreak/>
+                                        <Run Text="convictions by court-martial, civilian courts, or"/>
+                                        <LineBreak/>
+                                        <Run Text="non-judicial punishment that would prohibit this individual"/>
+                                        <LineBreak/>
+                                        <Run Text="from being assigned duties involving control of or"/>
+                                        <LineBreak/>
+                                        <Run Text="unescorted access to AA&amp;E."/>
+                                    </TextBlock>
+                                    <CheckBox x:Name="AAEQuestion6YCheckBox" Grid.Column="1" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion6_Changed" Unchecked="AAEQuestion6_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion6NCheckBox" Grid.Column="2" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion6_Changed" Unchecked="AAEQuestion6_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion6NACheckBox" Grid.Column="3" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion6_Changed" Unchecked="AAEQuestion6_Changed"/>
+                                    <TextBox x:Name="AAERemarks6TextBox" Grid.Column="4" Margin="10,5" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40" VerticalAlignment="Top"/>
+                                </Grid>
+                                
+                                <!-- Question 7 -->
+                                <Grid Grid.Row="12" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="2*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Margin="0,5" TextWrapping="Wrap">
+                                        <Run Text="7. Is the individual mature, stable, and does he/she"/>
+                                        <LineBreak/>
+                                        <Run Text="show willingness and capability to be assigned to duties"/>
+                                        <LineBreak/>
+                                        <Run Text="involving control of or unescorted access to AA&amp;E?"/>
+                                    </TextBlock>
+                                    <CheckBox x:Name="AAEQuestion7YCheckBox" Grid.Column="1" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion7_Changed" Unchecked="AAEQuestion7_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion7NCheckBox" Grid.Column="2" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion7_Changed" Unchecked="AAEQuestion7_Changed"/>
+                                    <CheckBox x:Name="AAEQuestion7NACheckBox" Grid.Column="3" Margin="10,5" HorizontalAlignment="Center" Checked="AAEQuestion7_Changed" Unchecked="AAEQuestion7_Changed"/>
+                                    <TextBox x:Name="AAERemarks7TextBox" Grid.Column="4" Margin="10,5" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40" VerticalAlignment="Top"/>
+                                </Grid>
+                                
+                                <!-- Signatures and Dates -->
+                                <TextBlock Grid.Row="13" Grid.Column="0" Grid.ColumnSpan="4" Text="Signatures:" 
+                                           FontWeight="Bold" Margin="0,15,0,10"/>
+                                
+                                <Grid Grid.Row="14" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Column="0" Content="Screened Signature:" Margin="0,5"/>
+                                    <TextBox x:Name="AAESignatureScreenedTextBox" Grid.Column="1" Margin="10,5"/>
+                                    <Label Grid.Column="2" Content="Date:" Margin="10,5,5,5"/>
+                                    <DatePicker x:Name="AAEDateScreenedPicker" Grid.Column="3" Margin="5,5,0,5"/>
+                                </Grid>
+                                
+                                <Grid Grid.Row="15" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Column="0" Content="Screener Signature:" Margin="0,5"/>
+                                    <TextBox x:Name="AAESignatureScreenerTextBox" Grid.Column="1" Margin="10,5"/>
+                                    <Label Grid.Column="2" Content="Date:" Margin="10,5,5,5"/>
+                                    <DatePicker x:Name="AAEDateScreenerPicker" Grid.Column="3" Margin="5,5,0,5"/>
+                                </Grid>
+                                
+                                <!-- Outcome -->
+                                <TextBlock Grid.Row="16" Grid.Column="0" Grid.ColumnSpan="4" Text="Outcome:" 
+                                           FontWeight="Bold" Margin="0,15,0,10"/>
+                                
+                                <StackPanel Grid.Row="17" Grid.Column="0" Grid.ColumnSpan="4" Orientation="Horizontal" Margin="0,5">
+                                    <CheckBox x:Name="AAEQualifiedCheckBox" Content="Qualified" Margin="0,0,20,0" Checked="AAEOutcome_Changed" Unchecked="AAEOutcome_Changed"/>
+                                    <CheckBox x:Name="AAEUnqualifiedCheckBox" Content="Unqualified" Margin="0,0,20,0" Checked="AAEOutcome_Changed" Unchecked="AAEOutcome_Changed"/>
+                                    <CheckBox x:Name="AAEReviewLaterCheckBox" Content="Review Later" Margin="0,0,20,0" Checked="AAEOutcome_Changed" Unchecked="AAEOutcome_Changed"/>
+                                    <Label Content="Other:" Margin="0,0,5,0"/>
+                                    <TextBox x:Name="AAEOtherQualifiedTextBox" Width="200" Margin="0,0,0,0"/>
+                                </StackPanel>
+                                
+                                <TextBlock Grid.Row="18" Grid.Column="0" Grid.ColumnSpan="4" Text="Annual requirement - expires 1 year from completion date" 
+                                           Margin="0,10,0,5" Foreground="Gray" FontStyle="Italic"/>
+                                
+                                <!-- Submit Button -->
+                                <Button Grid.Row="19" Grid.Column="0" Grid.ColumnSpan="4" Content="Submit AA&amp;E Screening" 
+                                        Click="SubmitAAEScreeningButton_Click" HorizontalAlignment="Right" Margin="0,10,0,0" Padding="20,5"/>
                             </Grid>
                         </GroupBox>
-                    </StackPanel>
-                    <!-- Move StatusTextBlock to Grid.Row 11 -->
-                    <TextBlock x:Name="StatusTextBlock" Grid.Row="11" Grid.Column="0" Grid.ColumnSpan="2" Margin="10" Foreground="Red"/>
-                </Grid>
+                                
+                                <!-- Deadly Force Training -->
+                        <GroupBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" Header="Deadly Force Training" Margin="0,0,0,20">
+                            <Grid Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <DatePicker x:Name="DeadlyForceDatePicker" Grid.Row="0" Grid.Column="0" Margin="0,5"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="Quarterly requirement - expires 3 months from completion date" 
+                                           Margin="10,5" VerticalAlignment="Center" Foreground="Gray" FontStyle="Italic"/>
+                                
+                                <!-- Submit Button -->
+                                <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Content="Submit Deadly Force Training" 
+                                        Click="SubmitDeadlyForceTrainingButton_Click" HorizontalAlignment="Right" Margin="0,10,0,0" Padding="20,5"/>
+                            </Grid>
+                        </GroupBox>
+                        
+                        <!-- Status Text -->
+                        <TextBlock x:Name="AdminStatusTextBlock" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4" Margin="10" Foreground="Red"/>
+                    </Grid>
+                </ScrollViewer>
             </TabItem>
+            
+            <TabItem Header="Electronic Admin">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Administrative Forms Management" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
+                        
+                        <!-- Admin Forms Selection -->
+                        <GroupBox Header="Select Administrative Form" Margin="0,0,0,20">
+                            <StackPanel Margin="10">
+                                <TextBlock Text="Choose the administrative form to add or update:" Margin="0,0,0,10"/>
+                                <ComboBox x:Name="AdminFormTypeComboBox" Width="300" Margin="0,0,0,10" SelectionChanged="AdminFormType_SelectionChanged">
+                                    <ComboBoxItem Content="DD2760 - Ammunition and Explosives Safety Qualification" Tag="DD2760"/>
+                                    <ComboBoxItem Content="AA&amp;E Screening - Ammunition and Explosives Screening" Tag="AAE" IsEnabled="False"/>
+                                    <ComboBoxItem Content="Deadly Force Training - Deadly Force Training Record" Tag="DeadlyForce" IsEnabled="False"/>
+                                </ComboBox>
+                                <TextBlock x:Name="AdminFormDescriptionText" Text="Select a form type to begin..." Foreground="Gray" FontStyle="Italic"/>
+                            </StackPanel>
+                        </GroupBox>
+                        
+                        <!-- Placeholder for DD2760 Form -->
+                        <GroupBox x:Name="DD2760PlaceholderGroupBox" Header="DD2760 Form" Margin="0,0,0,20" Visibility="Collapsed">
+                            <StackPanel Margin="20">
+                                <TextBlock Text="Input 2760 data here" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,20"/>
+                                <TextBlock Text="This is a placeholder for the DD2760 form functionality." FontSize="12" Foreground="Gray" HorizontalAlignment="Center" Margin="0,10"/>
+                                <TextBlock Text="The actual form implementation will be added here." FontSize="12" Foreground="Gray" HorizontalAlignment="Center" Margin="0,5"/>
+                            </StackPanel>
+                        </GroupBox>
+                        
+                        <!-- DD2760 Form Content -->
+                        <Grid x:Name="DD2760FormGrid" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Personnel Selection -->
+                            <GroupBox Grid.Row="0" Header="Personnel Selection" Margin="0,0,0,10">
+                                <Grid Margin="10">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Select Personnel:" VerticalAlignment="Center"/>
+                                    <ComboBox x:Name="DD2760PersonnelComboBox" Grid.Row="0" Grid.Column="1" Margin="10,0" 
+                                             DisplayMemberPath="FullName" SelectionChanged="DD2760Personnel_SelectionChanged"/>
+                                    <Button Grid.Row="0" Grid.Column="2" Content="Refresh List" Click="DD2760RefreshPersonnel_Click" Padding="10,5"/>
+                                    
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" x:Name="DD2760PersonnelStatusText" 
+                                               Text="Select personnel to add DD2760 form" Foreground="Gray" Margin="0,5,0,0"/>
+                                </Grid>
+                            </GroupBox>
+                            
+                            <!-- Form Details -->
+                            <GroupBox Grid.Row="1" Header="DD2760 Form Details" Margin="0,0,0,10">
+                                <Grid Margin="10">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Form Completion Date -->
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Form Completion Date:" VerticalAlignment="Center"/>
+                                    <DatePicker Grid.Row="0" Grid.Column="1" x:Name="DD2760CompletionDatePicker" Margin="10,0" SelectedDateChanged="DD2760CompletionDate_Changed"/>
+                                    
+                                    <Label Grid.Row="0" Grid.Column="2" Content="Expiration Date:" VerticalAlignment="Center"/>
+                                    <DatePicker Grid.Row="0" Grid.Column="3" x:Name="DD2760ExpirationDatePicker" Margin="10,0" IsEnabled="False"/>
+                                    
+                                    <!-- Domestic Violence Question -->
+                                    <Label Grid.Row="1" Grid.Column="0" Content="Domestic Violence Response:" VerticalAlignment="Center" Margin="0,10,0,0"/>
+                                    <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="10,10,0,0">
+                                        <RadioButton x:Name="DD2760YesRadio" Content="Yes" Margin="0,0,20,0" GroupName="DomesticViolence" Checked="DD2760DomesticViolence_Changed"/>
+                                        <RadioButton x:Name="DD2760NoRadio" Content="No" Margin="0,0,20,0" GroupName="DomesticViolence" Checked="DD2760DomesticViolence_Changed"/>
+                                        <RadioButton x:Name="DD2760DontKnowRadio" Content="I don't know" GroupName="DomesticViolence" Checked="DD2760DomesticViolence_Changed"/>
+                                    </StackPanel>
+                                    
+                                    <!-- Initials and Date -->
+                                    <Label Grid.Row="2" Grid.Column="0" Content="Initials:" VerticalAlignment="Center" Margin="0,10,0,0"/>
+                                    <TextBox Grid.Row="2" Grid.Column="1" x:Name="DD2760InitialsTextBox" Margin="10,10,0,0" Width="100" MaxLength="10"/>
+                                    
+                                    <Label Grid.Row="2" Grid.Column="2" Content="Date (YYYYMMDD):" VerticalAlignment="Center" Margin="0,10,0,0"/>
+                                    <DatePicker Grid.Row="2" Grid.Column="3" x:Name="DD2760ElectronicDomesticViolenceDatePicker" Margin="10,10,0,0"/>
+                                    
+                                    <!-- Court Information (if Yes) -->
+                                    <GroupBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" Header="Court Information (if answered 'Yes')" Margin="0,10,0,0" x:Name="DD2760CourtInfoGroupBox" Visibility="Collapsed">
+                                        <Grid Margin="10">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <Label Grid.Row="0" Grid.Column="0" Content="Court/Jurisdiction:" VerticalAlignment="Center"/>
+                                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="DD2760ElectronicCourtJurisdictionTextBox" Margin="10,0"/>
+                                            
+                                            <Label Grid.Row="1" Grid.Column="0" Content="Docket/Case Number:" VerticalAlignment="Center"/>
+                                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="DD2760ElectronicDocketCaseNumberTextBox" Margin="10,0"/>
+                                            
+                                            <Label Grid.Row="2" Grid.Column="0" Content="Statute/Charge:" VerticalAlignment="Center"/>
+                                            <TextBox Grid.Row="2" Grid.Column="1" x:Name="DD2760ElectronicStatuteChargeTextBox" Margin="10,0"/>
+                                        </Grid>
+                                    </GroupBox>
+                                    
+                                    <!-- Certifier Information -->
+                                    <Label Grid.Row="4" Grid.Column="0" Content="Certifier Name:" VerticalAlignment="Center" Margin="0,10,0,0"/>
+                                    <TextBox Grid.Row="4" Grid.Column="1" x:Name="DD2760CertifierNameTextBox" Margin="10,10,0,0"/>
+                                    
+                                    <Label Grid.Row="4" Grid.Column="2" Content="Rank/Grade:" VerticalAlignment="Center" Margin="0,10,0,0"/>
+                                    <TextBox Grid.Row="4" Grid.Column="3" x:Name="DD2760CertifierRankTextBox" Margin="10,10,0,0"/>
+                                    
+                                    <Label Grid.Row="5" Grid.Column="0" Content="SSN:" VerticalAlignment="Center" Margin="0,10,0,0"/>
+                                    <TextBox Grid.Row="5" Grid.Column="1" x:Name="DD2760CertifierSSNTextBox" Margin="10,10,0,0" MaxLength="11"/>
+                                    
+                                    <Label Grid.Row="5" Grid.Column="2" Content="Organization:" VerticalAlignment="Center" Margin="0,10,0,0"/>
+                                    <TextBox Grid.Row="5" Grid.Column="3" x:Name="DD2760CertifierOrganizationTextBox" Margin="10,10,0,0"/>
+                                </Grid>
+                            </GroupBox>
+                            
+                            <!-- Action Buttons -->
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Content="Generate PDF" Click="DD2760GeneratePdf_Click" Padding="20,5" Margin="0,0,10,0"/>
+                                <Button Content="Save Form" Click="DD2760SaveForm_Click" Padding="20,5" Margin="0,0,10,0"/>
+                                <Button Content="Clear Form" Click="DD2760ClearForm_Click" Padding="20,5"/>
+                            </StackPanel>
+                            
+                            <!-- Status -->
+                            <TextBlock Grid.Row="3" x:Name="DD2760StatusTextBlock" Text="" Margin="0,10,0,0" Foreground="Blue"/>
+                            
+                            <!-- Existing Forms -->
+                            <GroupBox Grid.Row="4" Header="Existing DD2760 Forms" Margin="0,10,0,0">
+                                <DataGrid x:Name="DD2760FormsDataGrid" Height="150" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Personnel" Binding="{Binding PersonnelName}" Width="150"/>
+                                        <DataGridTextColumn Header="Completion Date" Binding="{Binding DateCompleted, StringFormat=MM/dd/yyyy}" Width="120"/>
+                                        <DataGridTextColumn Header="Expiration Date" Binding="{Binding DateExpires, StringFormat=MM/dd/yyyy}" Width="120"/>
+                                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
+                                        <DataGridTemplateColumn Header="Actions" Width="100">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Content="View PDF" Click="DD2760ViewPdf_Click" Padding="5,2" Margin="0,0,5,0"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </GroupBox>
+                        </Grid>
+                        
+                        <!-- AA&E Form Content (Stub) -->
+                        <Grid x:Name="AAEFormGrid" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Text="AA&amp;E Screening Form" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+                                <TextBlock Text="This form will be implemented in a future update." Foreground="Gray" FontStyle="Italic"/>
+                            </StackPanel>
+                        </Grid>
+                        
+                        <!-- Deadly Force Form Content (Stub) -->
+                        <Grid x:Name="DeadlyForceFormGrid" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Text="Deadly Force Training Form" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+                                <TextBlock Text="This form will be implemented in a future update." Foreground="Gray" FontStyle="Italic"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            
+            <TabItem Header="Support">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Support &amp; Development Tools" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
+                        
+                        <!-- Test Data Management -->
+                        <GroupBox Header="Test Data Management" Margin="0,0,0,20">
+                            <StackPanel Margin="10">
+                                <TextBlock Text="Development and testing tools for managing sample data." Margin="0,0,0,10"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <Button x:Name="AddTestDataButton" Content="Add Test Data (20 Sailors)" Click="AddTestDataButton_Click" Margin="0,0,10,0" Padding="20,5"/>
+                                    <Button x:Name="ClearDatabaseButton" Content="Clear Database" Click="ClearDatabaseButton_Click" Padding="20,5"/>
+                                </StackPanel>
+                                <TextBlock x:Name="TestDataStatusTextBlock" Text="" Margin="0,0,0,10"/>
+                            </StackPanel>
+                        </GroupBox>
+                        
+                        <!-- Performance Metrics -->
+                        <GroupBox Header="System Performance Metrics" Margin="0,0,0,20">
+                            <StackPanel Margin="10">
+                                <!-- Database Performance -->
+                                <Expander Header="Database Performance" Margin="0,0,0,10">
+                                    <Grid Margin="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <Label Grid.Row="0" Grid.Column="0" Content="Average Load Time:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="AvgLoadTimeText" Grid.Row="0" Grid.Column="1" Text="0 ms" Margin="10,0"/>
+                                        <Label Grid.Row="0" Grid.Column="2" Content="Load Count:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="LoadCountText" Grid.Row="0" Grid.Column="3" Text="0" Margin="10,0"/>
+                                        
+                                        <Label Grid.Row="1" Grid.Column="0" Content="Average Filter Time:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="AvgFilterTimeText" Grid.Row="1" Grid.Column="1" Text="0 ms" Margin="10,0"/>
+                                        <Label Grid.Row="1" Grid.Column="2" Content="Filter Count:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="FilterCountText" Grid.Row="1" Grid.Column="3" Text="0" Margin="10,0"/>
+                                        
+                                        <Label Grid.Row="2" Grid.Column="0" Content="Total Personnel:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="TotalPersonnelText" Grid.Row="2" Grid.Column="1" Text="0" Margin="10,0"/>
+                                        <Label Grid.Row="2" Grid.Column="2" Content="Total Qualifications:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="TotalQualificationsText" Grid.Row="2" Grid.Column="3" Text="0" Margin="10,0"/>
+                                    </Grid>
+                                </Expander>
+                                
+                                <!-- Cache Performance -->
+                                <Expander Header="Cache Performance" Margin="0,0,0,10">
+                                    <Grid Margin="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <Label Grid.Row="0" Grid.Column="0" Content="Cache Size:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="CacheSizeText" Grid.Row="0" Grid.Column="1" Text="0 entries" Margin="10,0"/>
+                                        <Label Grid.Row="0" Grid.Column="2" Content="Expired Entries:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="ExpiredEntriesText" Grid.Row="0" Grid.Column="3" Text="0" Margin="10,0"/>
+                                        
+                                        <Label Grid.Row="1" Grid.Column="0" Content="Cache Hit Rate:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="CacheHitRateText" Grid.Row="1" Grid.Column="1" Text="0%" Margin="10,0"/>
+                                        <Button Grid.Row="1" Grid.Column="2" Content="Clear Cache" Click="ClearCache_Click" Margin="10,0" Padding="10,5"/>
+                                    </Grid>
+                                </Expander>
+                                
+                                <!-- System Status -->
+                                <Expander Header="System Status" Margin="0,0,0,10">
+                                    <Grid Margin="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <Label Grid.Row="0" Grid.Column="0" Content="Database Status:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="DatabaseStatusText" Grid.Row="0" Grid.Column="1" Text="Connected" Margin="10,0" Foreground="Green"/>
+                                        <Label Grid.Row="0" Grid.Column="2" Content="Last Backup:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="LastBackupText" Grid.Row="0" Grid.Column="3" Text="Never" Margin="10,0"/>
+                                        
+                                        <Label Grid.Row="1" Grid.Column="0" Content="System Uptime:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="SystemUptimeText" Grid.Row="1" Grid.Column="1" Text="0 days, 0 hours" Margin="10,0"/>
+                                        <Label Grid.Row="1" Grid.Column="2" Content="Memory Usage:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="MemoryUsageText" Grid.Row="1" Grid.Column="3" Text="0 MB" Margin="10,0"/>
+                                    </Grid>
+                                </Expander>
+                                
+                                <!-- Action Buttons -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                                    <Button Content="Export Performance Report" Click="ExportPerformanceReport_Click" Margin="5" Padding="15,5"/>
+                                    <Button Content="Reset Performance Counters" Click="ResetPerformanceCounters_Click" Margin="5" Padding="15,5"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            
+
+
+
+
+
+            <TabItem Header="3591/1 Digital Entry">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="20" Orientation="Vertical" Width="Auto">
+                        <GroupBox Header="Session-Level Data" Margin="0,0,0,10">
+                            <StackPanel>
+                                <UniformGrid Columns="3" Rows="2" Margin="10">
+                                    <StackPanel>
+                                        <TextBlock Text="Ship or Station:"/>
+                                        <ComboBox x:Name="DE_ShipStationBox" Width="180" SelectedIndex="0" SelectedValuePath="Content">
+                                            <ComboBoxItem Content="USS Thomas Hudner"/>
+                                            <ComboBoxItem Content="USS Donald Cook"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="Division or Activity:"/>
+                                        <ComboBox x:Name="DE_DivisionActivityBox" Width="180" SelectedIndex="0" SelectedValuePath="Content">
+                                            <ComboBoxItem Content=""/>
+                                            <ComboBoxItem Content="Operations"/>
+                                            <ComboBoxItem Content="Engineering"/>
+                                            <ComboBoxItem Content="Combat Systems"/>
+                                            <ComboBoxItem Content="Supply"/>
+                                            <ComboBoxItem Content="Admin"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="Weapon(s) Fired:"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                            <CheckBox x:Name="DE_M9CheckBox" Content="M9" Margin="0,0,10,0"/>
+                                            <CheckBox x:Name="DE_M16CheckBox" Content="M4/M16" Margin="0,0,10,0"/>
+                                            <CheckBox x:Name="DE_M500CheckBox" Content="M500" Margin="0,0,5,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="Range Name / Station:"/>
+                                        <ComboBox x:Name="DE_RangeNameLocationBox" Width="180" SelectedIndex="0" SelectedValuePath="Content">
+                                            <ComboBoxItem Content="San Diego"/>
+                                            <ComboBoxItem Content="Mayport"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="Date of Firing:"/>
+                                        <DatePicker x:Name="DE_DateOfFiringPicker" Width="180"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="Sailor Qualifications" Margin="0,0,0,10">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    
+                                    <!-- Sailor Selection Panel -->
+                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,5">
+                                        <TextBlock Text="Quick Add Sailor:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                        <ComboBox x:Name="SailorSelectionComboBox" Width="200" 
+                                                  DisplayMemberPath="DisplayName"
+                                                  SelectionChanged="SailorSelectionComboBox_SelectionChanged"/>
+                                        <Button Content="Add Selected Sailor" Margin="10,0,0,0" Padding="10,2" Click="AddSelectedSailor_Click"/>
+                                        <Button Content="Refresh List" Margin="5,0,0,0" Padding="10,2" Click="RefreshSailorList_Click"/>
+                                    </StackPanel>
+                                    
+                                    <DataGrid x:Name="DE_SailorGrid" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="True" Height="250">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="150"/>
+                                            <DataGridTextColumn Header="DoD ID" Binding="{Binding DodId}" Width="90" IsReadOnly="True"/>
+                                            <DataGridTextColumn Header="Rank/Rate" Binding="{Binding RankRate}" Width="80" IsReadOnly="True"/>
+                                            <DataGridTextColumn Header="NHQC" Binding="{Binding NHQC}" Width="60"/>
+                                            <DataGridTextColumn Header="RQC" Binding="{Binding RQC}" Width="60"/>
+                                            <DataGridTextColumn Header="SPWC T1" Binding="{Binding SPWCT1}" Width="60"/>
+                                            <DataGridTextColumn Header="SPWC T2" Binding="{Binding SPWCT2}" Width="60"/>
+                                            <DataGridTextColumn Header="SPWC T3" Binding="{Binding SPWCT3}" Width="60"/>
+                                            <DataGridTextColumn Header="HPWC T1" Binding="{Binding HPWCT1}" Width="60"/>
+                                            <DataGridTextColumn Header="HPWC T2" Binding="{Binding HPWCT2}" Width="60"/>
+                                            <DataGridTextColumn Header="HPWC T3" Binding="{Binding HPWCT3}" Width="60"/>
+                                            <DataGridTextColumn Header="HLLC" Binding="{Binding HLLC}" Width="60"/>
+                                            <DataGridTextColumn Header="RLLC" Binding="{Binding RLLC}" Width="60"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Grid>
+                                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                    <Button Content="Add Row" Width="80" Margin="0,0,10,0" Click="DE_AddRow_Click"/>
+                                    <Button Content="Remove Row" Width="100" Click="DE_RemoveRow_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="Save" Width="100" Margin="0,0,10,0" Click="DE_SaveForm_Click"/>
+                            <Button Content="Clear" Width="100" Click="DE_ClearForm_Click"/>
+                            <Button Content="Test PDF Fields" Width="120" Margin="10,0,0,0" Click="TestPdfFields_Click"/>
+                            <Button Content="Open Generated Forms" Width="140" Margin="10,0,0,0" Click="OpenGeneratedForms_Click"/>
+                        </StackPanel>
+                        
+                        <!-- DEVELOPMENT ONLY - Score Range Reference -->
+                        <Border Background="#FFF3CD" BorderBrush="#FFEAA7" BorderThickness="1" CornerRadius="4" Margin="0,20,0,0" Padding="10">
+                            <StackPanel>
+                                <TextBlock Text="🔧 DEVELOPMENT ONLY - Valid Score Ranges" FontWeight="Bold" Foreground="#856404" Margin="0,0,0,5"/>
+                                <TextBlock Text="Full Qualification:" FontWeight="Bold" FontSize="12" Foreground="#856404" Margin="0,5,0,0"/>
+                                <TextBlock Text="M9 CAT II: NHQC (180-240), HLLC (12-18), HPWC Total (12-18)" FontSize="11" Foreground="#856404"/>
+                                <TextBlock Text="M9 CAT I: HQC (180-240)" FontSize="11" Foreground="#856404"/>
+                                <TextBlock Text="M4/M16 CAT II: RQC (140-200), RLC (14-20)" FontSize="11" Foreground="#856404"/>
+                                <TextBlock Text="M500 CAT II: SPWC Total (90-162)" FontSize="11" Foreground="#856404"/>
+                                <TextBlock Text="M240/M2: COF (≥100)" FontSize="11" Foreground="#856404"/>
+                                <TextBlock Text=""/>
+                                <TextBlock Text="Sustainment Qualification:" FontWeight="Bold" FontSize="12" Foreground="#856404" Margin="0,5,0,0"/>
+                                <TextBlock Text="M9/M18: Navy Handgun Qualification Course (NHQC) — Passing Score: 180" FontSize="11" Foreground="#856404"/>
+                                <TextBlock Text="M4/M16: Rifle Qualification Course (RQC) — Passing Score: 30 hits" FontSize="11" Foreground="#856404"/>
+                                <TextBlock Text="M500: Shotgun Practical Weapons Course (SPWC) — Passing Score: 90" FontSize="11" Foreground="#856404"/>
+                                <TextBlock Text="M240/M2: Course of Fire (COF) — Passing Score: 100" FontSize="11" Foreground="#856404"/>
+                                <TextBlock Text="⚠️ This banner will be removed before production" FontSize="10" FontStyle="Italic" Foreground="#856404" Margin="0,5,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            
+
         </TabControl>
     </Grid>
 </Window> 
