@@ -107,27 +107,34 @@ namespace QualTrack.Core.Services
                 }
             }
 
+            // Get validity periods based on category (OPNAVINST 3591.1G)
+            var (fullValidityDays, sustainmentDays) = GetValidityPeriods(category);
+            
             // If qualification is for today, always valid (assuming scores passed above)
             if (today == dateQualified.Date)
             {
                 status.IsQualified = true;
                 status.IsDisqualified = false;
                 status.SustainmentDue = false;
-                status.ExpiresOn = dateQualified.Date.AddDays((details != null && details.SustainmentDate.HasValue) ? 365 : 240);
+                // Use category-specific validity periods
+                status.ExpiresOn = dateQualified.Date.AddDays(fullValidityDays);
                 status.DaysUntilExpiration = (status.ExpiresOn - today).Days;
-                status.DaysUntilSustainment = (dateQualified.Date.AddDays(120) - today).Days;
+                status.DaysUntilSustainment = (dateQualified.Date.AddDays(sustainmentDays) - today).Days;
                 return status;
             }
 
-            // Use sustainment logic: 365 days if sustained, 240 if not
-            int sustainmentWindow = (details != null && details.SustainmentDate.HasValue) ? 365 : 240;
-            var baseDate = dateQualified.Date.AddDays(sustainmentWindow);
+            // Use category-specific validity periods
+            // For CAT III (M240): 730 days full validity, 365 days sustainment due
+            // For CAT IV (M2): 1095 days full validity, 547 days sustainment due
+            // For CAT I/II: 365 days full validity, 180 days sustainment due (existing logic)
+            var baseDate = dateQualified.Date.AddDays(fullValidityDays);
             var lapseDate = new DateTime(baseDate.Year, baseDate.Month, 1).AddMonths(1);
             status.ExpiresOn = lapseDate;
             status.DaysUntilExpiration = (lapseDate - today).Days;
-            // Sustainment window: 120-240 days after qualification
-            var sustainmentStart = dateQualified.Date.AddDays(120);
-            var sustainmentEnd = dateQualified.Date.AddDays(240);
+            
+            // Sustainment window based on category
+            var sustainmentStart = dateQualified.Date.AddDays(sustainmentDays);
+            var sustainmentEnd = dateQualified.Date.AddDays(fullValidityDays);
             status.DaysUntilSustainment = (sustainmentStart - today).Days;
             // Status logic
             if (today >= lapseDate)
@@ -188,8 +195,9 @@ namespace QualTrack.Core.Services
                 "M9" when category == 2 => details.OverallHandgunPass,
                 "M4/M16" when category == 2 => details.OverallRiflePass,
                 "M500" when category == 2 => details.SPWCPass,
-                "M240" when category == 2 => details.COFPass,
-                "M2" when category == 2 => details.COFPass,
+                "M240" when category == 3 => details.COFPass, // CAT III for M240
+                "M2" when category == 4 => details.COFPass,   // CAT IV for M2
+                "M2A1" when category == 4 => details.COFPass, // CAT IV for M2A1
                 _ => true // Unknown weapon/category combination, assume passing
             };
         }
@@ -205,8 +213,8 @@ namespace QualTrack.Core.Services
             {
                 1 => (365, 180),  // CAT I: 1 year full validity, 6 months sustainment
                 2 => (365, 180),  // CAT II: 1 year full validity, 6 months sustainment
-                3 => (730, 365),  // CAT III: 2 years full validity, 1 year sustainment
-                4 => (1095, 547), // CAT IV: 3 years full validity, 1.5 years sustainment
+                3 => (365, 180),  // CAT III (M240): 1 year full validity, 6 months sustainment (crew served weapons are 1 year)
+                4 => (365, 180),  // CAT IV (M2): 1 year full validity, 6 months sustainment (crew served weapons are 1 year)
                 _ => throw new ArgumentException("Invalid category", nameof(category))
             };
         }
@@ -223,7 +231,8 @@ namespace QualTrack.Core.Services
                 "M4/M16", 
                 "M500",
                 "M240",
-                "M2"
+                "M2",
+                "M2A1"
             };
         }
 

@@ -28,7 +28,7 @@
         </Menu>
         
         <!-- Main Content -->
-        <TabControl x:Name="MainTabControl" Grid.Row="1" Margin="10">
+        <TabControl x:Name="MainTabControl" Grid.Row="1" Margin="10" SelectionChanged="MainTabControl_SelectionChanged">
             <TabItem Header="Dashboard">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -64,7 +64,7 @@
                             <ComboBoxItem Content="M4/M16"/>
                             <ComboBoxItem Content="M500"/>
                             <ComboBoxItem Content="M240"/>
-                            <ComboBoxItem Content="M2"/>
+                            <ComboBoxItem Content=".50"/>
                         </ComboBox>
                     </StackPanel>
                     
@@ -1075,6 +1075,241 @@
                 </ScrollViewer>
             </TabItem>
             
+            <TabItem Header="3591/2 Digital Entry">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="20" Orientation="Vertical" Width="Auto">
+                        <GroupBox Header="Session-Level Data" Margin="0,0,0,10">
+                            <StackPanel>
+                                <UniformGrid Columns="3" Rows="2" Margin="10">
+                                    <StackPanel>
+                                        <TextBlock Text="Ship or Station:"/>
+                                        <ComboBox x:Name="CSW_ShipStationBox" Width="180" SelectedIndex="0" SelectedValuePath="Content">
+                                            <ComboBoxItem Content="USS Thomas Hudner"/>
+                                            <ComboBoxItem Content="USS Donald Cook"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="Division or Activity:"/>
+                                        <ComboBox x:Name="CSW_DivisionActivityBox" Width="180" SelectedIndex="0" SelectedValuePath="Content">
+                                            <ComboBoxItem Content=""/>
+                                            <ComboBoxItem Content="Operations"/>
+                                            <ComboBoxItem Content="Engineering"/>
+                                            <ComboBoxItem Content="Combat Systems"/>
+                                            <ComboBoxItem Content="Supply"/>
+                                            <ComboBoxItem Content="Admin"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="Weapon:"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                            <CheckBox x:Name="CSW_M240CheckBox" Content="M240" Margin="0,0,10,0"/>
+                                            <CheckBox x:Name="CSW_M2CheckBox" Content="M2A1" Margin="0,0,5,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="Range Name / Station:"/>
+                                        <ComboBox x:Name="CSW_RangeNameLocationBox" Width="180" SelectedIndex="0" SelectedValuePath="Content">
+                                            <ComboBoxItem Content="San Diego"/>
+                                            <ComboBoxItem Content="Mayport"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="Date of Firing:"/>
+                                        <DatePicker x:Name="CSW_DateOfFiringPicker" Width="180"/>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="CSWI:"/>
+                                        <ComboBox x:Name="CSW_CSWIComboBox" Width="180" Margin="0,5,0,0"
+                                                  DisplayMemberPath="DisplayName"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="Crew Served Weapon Qualifications" Margin="0,0,0,10">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    
+                                    <!-- Sailor Selection Panel -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
+                                            <TextBlock Text="Lookup Name:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                            <TextBox x:Name="CSW_SailorLookupTextBox" Width="200" Margin="0,0,10,0"
+                                                     KeyDown="CSW_SailorLookupTextBox_KeyDown"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Row="1" Orientation="Horizontal">
+                                            <TextBlock Text="Quick Add Sailor:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                            <ComboBox x:Name="CSW_SailorSelectionComboBox" Width="200" 
+                                                      DisplayMemberPath="DisplayName"
+                                                      SelectionChanged="CSW_SailorSelectionComboBox_SelectionChanged"/>
+                                            <Button Content="Add Selected Sailor" Margin="10,0,0,0" Padding="10,2" Click="CSW_AddSelectedSailor_Click"/>
+                                            <Button Content="Refresh List" Margin="5,0,0,0" Padding="10,2" Click="CSW_RefreshSailorList_Click"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    
+                                    <StackPanel Grid.Row="1">
+                                        <Grid Margin="0,0,0,4">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="140"/>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Border Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="11" Background="#FFEFEFEF" BorderBrush="#FFCCCCCC" BorderThickness="0,0,0,1">
+                                                <TextBlock Text="Light-Medium Machine Gun (M240)" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,4"/>
+                                            </Border>
+                                            <Border Grid.Row="0" Grid.Column="13" Grid.ColumnSpan="11" Background="#FFEFEFEF" BorderBrush="#FFCCCCCC" BorderThickness="0,0,0,1">
+                                                <TextBlock Text="Heavy Machine Gun (.50)" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,4"/>
+                                            </Border>
+                                            <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="13" BorderBrush="Black" BorderThickness="2,0,0,0"/>
+
+                                            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Background="#FFF7F7F7" BorderBrush="#FFDDDDDD" BorderThickness="0,0,0,1">
+                                                <TextBlock Text="Sailor" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,3"/>
+                                            </Border>
+                                            <Border Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="6" Background="#FFF7F7F7" BorderBrush="#FFDDDDDD" BorderThickness="0,0,0,1">
+                                                <TextBlock Text="Free Gun" HorizontalAlignment="Center" Margin="0,3"/>
+                                            </Border>
+                                            <Border Grid.Row="1" Grid.Column="8" Grid.ColumnSpan="5" Background="#FFF7F7F7" BorderBrush="#FFDDDDDD" BorderThickness="0,0,0,1">
+                                                <TextBlock Text="T&amp;E" HorizontalAlignment="Center" Margin="0,3"/>
+                                            </Border>
+                                            <Border Grid.Row="1" Grid.Column="13" Grid.ColumnSpan="6" Background="#FFF7F7F7" BorderBrush="#FFDDDDDD" BorderThickness="0,0,0,1">
+                                                <TextBlock Text="Free Gun" HorizontalAlignment="Center" Margin="0,3"/>
+                                            </Border>
+                                            <Border Grid.Row="1" Grid.Column="19" Grid.ColumnSpan="5" Background="#FFF7F7F7" BorderBrush="#FFDDDDDD" BorderThickness="0,0,0,1">
+                                                <TextBlock Text="T&amp;E" HorizontalAlignment="Center" Margin="0,3"/>
+                                            </Border>
+                                        </Grid>
+
+                                        <DataGrid x:Name="CSW_EntryGrid" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="True" Height="300">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="Name" Binding="{Binding GunnerName}" Width="140"/>
+                                                <DataGridTextColumn Header="Rank" Binding="{Binding GunnerRankRate}" Width="80"/>
+
+                                                <DataGridTextColumn Header="P1" Binding="{Binding LightFreeP1}" Width="55"/>
+                                                <DataGridTextColumn Header="P2" Binding="{Binding LightFreeP2}" Width="55"/>
+                                                <DataGridTextColumn Header="P3" Binding="{Binding LightFreeP3}" Width="55"/>
+                                                <DataGridTextColumn Header="P4" Binding="{Binding LightFreeP4}" Width="55"/>
+                                                <DataGridTextColumn Header="P5" Binding="{Binding LightFreeP5}" Width="55"/>
+                                                <DataGridTextColumn Header="P6" Binding="{Binding LightFreeP6}" Width="55">
+                                                    <DataGridTextColumn.CellStyle>
+                                                        <Style TargetType="DataGridCell">
+                                                            <Setter Property="BorderThickness" Value="0,0,2,0"/>
+                                                            <Setter Property="BorderBrush" Value="Black"/>
+                                                        </Style>
+                                                    </DataGridTextColumn.CellStyle>
+                                                    <DataGridTextColumn.HeaderStyle>
+                                                        <Style TargetType="DataGridColumnHeader">
+                                                            <Setter Property="BorderThickness" Value="0,0,2,0"/>
+                                                            <Setter Property="BorderBrush" Value="Black"/>
+                                                        </Style>
+                                                    </DataGridTextColumn.HeaderStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTextColumn Header="P1" Binding="{Binding LightTeP1}" Width="55"/>
+                                                <DataGridTextColumn Header="P2" Binding="{Binding LightTeP2}" Width="55"/>
+                                                <DataGridTextColumn Header="P3" Binding="{Binding LightTeP3}" Width="55"/>
+                                                <DataGridTextColumn Header="P4" Binding="{Binding LightTeP4}" Width="55"/>
+                                                <DataGridTextColumn Header="P5" Binding="{Binding LightTeP5}" Width="55">
+                                                    <DataGridTextColumn.CellStyle>
+                                                        <Style TargetType="DataGridCell">
+                                                            <Setter Property="BorderThickness" Value="0,0,2,0"/>
+                                                            <Setter Property="BorderBrush" Value="Black"/>
+                                                        </Style>
+                                                    </DataGridTextColumn.CellStyle>
+                                                    <DataGridTextColumn.HeaderStyle>
+                                                        <Style TargetType="DataGridColumnHeader">
+                                                            <Setter Property="BorderThickness" Value="0,0,2,0"/>
+                                                            <Setter Property="BorderBrush" Value="Black"/>
+                                                        </Style>
+                                                    </DataGridTextColumn.HeaderStyle>
+                                                </DataGridTextColumn>
+
+                                                <DataGridTextColumn Header="P1" Binding="{Binding HeavyFreeP1}" Width="55"/>
+                                                <DataGridTextColumn Header="P2" Binding="{Binding HeavyFreeP2}" Width="55"/>
+                                                <DataGridTextColumn Header="P3" Binding="{Binding HeavyFreeP3}" Width="55"/>
+                                                <DataGridTextColumn Header="P4" Binding="{Binding HeavyFreeP4}" Width="55"/>
+                                                <DataGridTextColumn Header="P5" Binding="{Binding HeavyFreeP5}" Width="55"/>
+                                                <DataGridTextColumn Header="P6" Binding="{Binding HeavyFreeP6}" Width="55">
+                                                    <DataGridTextColumn.CellStyle>
+                                                        <Style TargetType="DataGridCell">
+                                                            <Setter Property="BorderThickness" Value="0,0,2,0"/>
+                                                            <Setter Property="BorderBrush" Value="Black"/>
+                                                        </Style>
+                                                    </DataGridTextColumn.CellStyle>
+                                                    <DataGridTextColumn.HeaderStyle>
+                                                        <Style TargetType="DataGridColumnHeader">
+                                                            <Setter Property="BorderThickness" Value="0,0,2,0"/>
+                                                            <Setter Property="BorderBrush" Value="Black"/>
+                                                        </Style>
+                                                    </DataGridTextColumn.HeaderStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTextColumn Header="P1" Binding="{Binding HeavyTeP1}" Width="55"/>
+                                                <DataGridTextColumn Header="P2" Binding="{Binding HeavyTeP2}" Width="55"/>
+                                                <DataGridTextColumn Header="P3" Binding="{Binding HeavyTeP3}" Width="55"/>
+                                                <DataGridTextColumn Header="P4" Binding="{Binding HeavyTeP4}" Width="55"/>
+                                                <DataGridTextColumn Header="P5" Binding="{Binding HeavyTeP5}" Width="55"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </StackPanel>
+                                </Grid>
+                                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                    <Button Content="Add Row" Width="80" Margin="0,0,10,0" Click="CSW_AddRow_Click"/>
+                                    <Button Content="Remove Row" Width="100" Click="CSW_RemoveRow_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="Save" Width="100" Margin="0,0,10,0" Click="CSW_SaveForm_Click"/>
+                            <Button Content="Clear" Width="100" Click="CSW_ClearForm_Click"/>
+                            <Button Content="Open Generated Forms" Width="140" Margin="10,0,0,0" Click="CSW_OpenGeneratedForms_Click"/>
+                        </StackPanel>
+                        
+                        <!-- DEVELOPMENT ONLY - Score Range Reference -->
+                        <Border Background="#FFF3CD" BorderBrush="#FFEAA7" BorderThickness="1" CornerRadius="4" Margin="0,20,0,0" Padding="10">
+                            <StackPanel>
+                                <TextBlock Text="🔧 DEVELOPMENT ONLY - Valid Score Ranges" FontWeight="Bold" Foreground="#856404" Margin="0,0,0,5"/>
+                                <TextBlock Text="Crew Served Weapons:" FontWeight="Bold" FontSize="12" Foreground="#856404" Margin="0,5,0,0"/>
+                                <TextBlock Text="M240/M2A1: COF (≥100) - Passing Score: 100" FontSize="11" Foreground="#856404"/>
+                                <TextBlock Text="Validity: 1 year from date of qualification" FontSize="11" Foreground="#856404"/>
+                                <TextBlock Text="Requires CSWI signature (Crew Served Weapons Instructor with valid 3591/2)" FontSize="11" Foreground="#856404"/>
+                                <TextBlock Text="⚠️ This banner will be removed before production" FontSize="10" FontStyle="Italic" Foreground="#856404" Margin="0,5,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
         </TabControl>
     </Grid>

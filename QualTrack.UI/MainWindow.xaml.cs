@@ -60,6 +60,7 @@ namespace QualTrack.UI
 
 
         private ObservableCollection<SailorQualification> deSailorQualifications = new ObservableCollection<SailorQualification>();
+        private ObservableCollection<CrewServedWeaponEntry> cswEntries = new ObservableCollection<CrewServedWeaponEntry>();
 
         public MainWindow()
         {
@@ -76,6 +77,22 @@ namespace QualTrack.UI
             Loaded += MainWindow_Loaded;
         }
 
+        private async void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!ReferenceEquals(e.Source, MainTabControl))
+            {
+                return;
+            }
+
+            if (MainTabControl.SelectedItem is TabItem selectedTab)
+            {
+                if (selectedTab.Header?.ToString() == "3591/2 Digital Entry")
+                {
+                    await InitializeCrewServedWeaponTab();
+                }
+            }
+        }
+        
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             try
@@ -366,7 +383,15 @@ namespace QualTrack.UI
             // Weapon filter
             if (_selectedWeapon != "All")
             {
-                filtered = filtered.Where(pvm => pvm.Qualifications.Any(q => q.Weapon == _selectedWeapon && q.Status?.IsQualified == true));
+                if (_selectedWeapon == ".50")
+                {
+                    filtered = filtered.Where(pvm => pvm.Qualifications.Any(q =>
+                        (q.Weapon == "M2" || q.Weapon == "M2A1") && q.Status?.IsQualified == true));
+                }
+                else
+                {
+                    filtered = filtered.Where(pvm => pvm.Qualifications.Any(q => q.Weapon == _selectedWeapon && q.Status?.IsQualified == true));
+                }
             }
             
             // Update ObservableCollection efficiently
@@ -1056,7 +1081,7 @@ namespace QualTrack.UI
                             UseShellExecute = true
                         });
                     }
-                    catch (Exception openEx)
+                catch (Exception)
                     {
                         // If opening fails, show the path so user can open manually
                         AdminStatusTextBlock.Text = $"PDF generated successfully but could not open automatically. File location: {pdfPath}";
@@ -1935,7 +1960,7 @@ namespace QualTrack.UI
 
             if (_dashboardSettings.ShowM2)
             {
-                PersonnelDataGrid.Columns.Add(CreateWeaponColumn("M2", "M2Qualified", "M2Color", 40));
+                PersonnelDataGrid.Columns.Add(CreateWeaponColumn(".50", "FiftyCalQualified", "FiftyCalColor", 40));
             }
 
             if (_dashboardSettings.ShowDateQualified)
@@ -3305,6 +3330,370 @@ END OF REPORT";
             DE_DivisionActivityBox.SelectedIndex = 0;
             DE_RangeNameLocationBox.SelectedIndex = 0;
             DE_DateOfFiringPicker.SelectedDate = DateTime.Today;
+        }
+
+        // ========== 3591/2 Crew Served Weapon Tab Handlers ==========
+        
+        private async Task InitializeCrewServedWeaponTab()
+        {
+            cswEntries.Clear();
+            CSW_EntryGrid.ItemsSource = cswEntries;
+            await LoadCSWSailorComboBoxData();
+            
+            CSW_ShipStationBox.SelectedIndex = 0;
+            CSW_DivisionActivityBox.SelectedIndex = 0;
+            CSW_RangeNameLocationBox.SelectedIndex = 0;
+            CSW_DateOfFiringPicker.SelectedDate = DateTime.Today;
+            CSW_CSWIComboBox.SelectedIndex = -1;
+        }
+
+        private async Task LoadCSWSailorComboBoxData()
+        {
+            try
+            {
+                using var dbContext = new DatabaseContext();
+                var personnelRepo = new PersonnelRepository();
+                var allPersonnel = await personnelRepo.GetAllPersonnelAsync(dbContext);
+                
+                var sailorModels = allPersonnel.Select(p => new SailorDisplayModel(
+                    p.Id, p.LastName, p.FirstName, p.DODId, p.Rank, p.Rate)).ToList();
+                
+                CSW_SailorSelectionComboBox.ItemsSource = sailorModels;
+                CSW_CSWIComboBox.ItemsSource = sailorModels;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading sailor data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CSW_AddRow_Click(object sender, RoutedEventArgs e)
+        {
+            cswEntries.Add(new CrewServedWeaponEntry());
+        }
+
+        private void CSW_RemoveRow_Click(object sender, RoutedEventArgs e)
+        {
+            if (CSW_EntryGrid.SelectedItem is CrewServedWeaponEntry selected && cswEntries.Contains(selected))
+                cswEntries.Remove(selected);
+        }
+
+        private void CSW_SailorSelectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Optional: Show preview of selected sailor
+        }
+
+        private void CSW_SailorLookupTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter)
+            {
+                return;
+            }
+
+            var query = CSW_SailorLookupTextBox.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return;
+            }
+
+            var sailorModels = CSW_SailorSelectionComboBox.ItemsSource as IEnumerable<SailorDisplayModel>;
+            var match = sailorModels?.FirstOrDefault(sailor =>
+                sailor.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase));
+
+            if (match != null)
+            {
+                CSW_SailorSelectionComboBox.SelectedItem = match;
+            }
+            else
+            {
+                MessageBox.Show($"No sailor found matching '{query}'.", "Lookup", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+
+            e.Handled = true;
+        }
+
+        private void CSW_AddSelectedSailor_Click(object sender, RoutedEventArgs e)
+        {
+            if (CSW_SailorSelectionComboBox.SelectedItem is SailorDisplayModel selectedSailor)
+            {
+                var newEntry = new CrewServedWeaponEntry
+                {
+                    GunnerName = selectedSailor.DisplayName,
+                    GunnerDodId = selectedSailor.DODId,
+                    GunnerRankRate = selectedSailor.RankRate
+                };
+                cswEntries.Insert(0, newEntry);
+            }
+        }
+
+        private static int? CalculateCrewServedCofScore(CrewServedWeaponEntry entry, string weapon)
+        {
+            int Sum(params int?[] scores) => scores.Where(score => score.HasValue).Sum(score => score.Value);
+
+            return weapon switch
+            {
+                "M240" => Sum(
+                    entry.LightFreeP1, entry.LightFreeP2, entry.LightFreeP3, entry.LightFreeP4, entry.LightFreeP5, entry.LightFreeP6,
+                    entry.LightTeP1, entry.LightTeP2, entry.LightTeP3, entry.LightTeP4, entry.LightTeP5),
+                "M2A1" => Sum(
+                    entry.HeavyFreeP1, entry.HeavyFreeP2, entry.HeavyFreeP3, entry.HeavyFreeP4, entry.HeavyFreeP5, entry.HeavyFreeP6,
+                    entry.HeavyTeP1, entry.HeavyTeP2, entry.HeavyTeP3, entry.HeavyTeP4, entry.HeavyTeP5),
+                "M2" => Sum(
+                    entry.HeavyFreeP1, entry.HeavyFreeP2, entry.HeavyFreeP3, entry.HeavyFreeP4, entry.HeavyFreeP5, entry.HeavyFreeP6,
+                    entry.HeavyTeP1, entry.HeavyTeP2, entry.HeavyTeP3, entry.HeavyTeP4, entry.HeavyTeP5),
+                _ => null
+            };
+        }
+
+        private void CSW_RefreshSailorList_Click(object sender, RoutedEventArgs e)
+        {
+            _ = LoadCSWSailorComboBoxData();
+        }
+
+        private void CSW_ClearForm_Click(object sender, RoutedEventArgs e)
+        {
+            cswEntries.Clear();
+            CSW_M240CheckBox.IsChecked = false;
+            CSW_M2CheckBox.IsChecked = false;
+            CSW_ShipStationBox.SelectedIndex = 0;
+            CSW_DivisionActivityBox.SelectedIndex = 0;
+            CSW_RangeNameLocationBox.SelectedIndex = 0;
+            CSW_DateOfFiringPicker.SelectedDate = DateTime.Today;
+            CSW_CSWIComboBox.SelectedIndex = -1;
+        }
+
+        private string GetCSWWeaponsFiredFromCheckboxes()
+        {
+            var weapons = new List<string>();
+            if (CSW_M240CheckBox.IsChecked == true) weapons.Add("M240");
+            if (CSW_M2CheckBox.IsChecked == true) weapons.Add("M2A1");
+            return string.Join(", ", weapons);
+        }
+
+        private async void CSW_SaveForm_Click(object sender, RoutedEventArgs e)
+        {
+            DatabaseContext? dbContext = null;
+            try
+            {
+                Console.WriteLine("Starting 3591/2 form save process...");
+                
+                dbContext = new DatabaseContext();
+                var sessionRepo = new CrewServedWeaponSessionRepository();
+                var personnelRepo = new PersonnelRepository();
+                var qualRepo = new QualificationRepository();
+                var crewServedService = new CrewServedWeaponService(
+                    _qualificationService,
+                    new CrewServedWeaponSessionRepository(),
+                    qualRepo);
+
+                // Get selected weapon
+                string weapon = GetCSWWeaponsFiredFromCheckboxes();
+                if (string.IsNullOrEmpty(weapon))
+                {
+                    MessageBox.Show("Please select at least one weapon (M240 or M2A1).", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // For now, handle single weapon - if both selected, use first one
+                weapon = weapon.Split(',')[0].Trim();
+
+                // 1. Save session-level data
+                var session = new CrewServedWeaponSession
+                {
+                    ShipStation = CSW_ShipStationBox.SelectedValue?.ToString() ?? string.Empty,
+                    DivisionActivity = CSW_DivisionActivityBox.SelectedValue?.ToString() ?? string.Empty,
+                    Weapon = weapon,
+                    RangeNameLocation = CSW_RangeNameLocationBox.SelectedValue?.ToString() ?? string.Empty,
+                    DateOfFiring = CSW_DateOfFiringPicker.SelectedDate,
+                    InstructorName = (CSW_CSWIComboBox.SelectedItem as SailorDisplayModel)?.DisplayName ?? string.Empty,
+                    InstructorRankRate = (CSW_CSWIComboBox.SelectedItem as SailorDisplayModel)?.RankRate ?? string.Empty,
+                    CreatedDate = DateTime.Now
+                };
+
+                int savedCount = 0;
+                string pdfPath = "";
+
+                // Process each entry
+                foreach (var entry in cswEntries)
+                {
+                    if (string.IsNullOrWhiteSpace(entry.GunnerDodId)) continue;
+
+                    // Validate DODID format
+                    if (entry.GunnerDodId.Length != 10 || !entry.GunnerDodId.All(char.IsDigit))
+                    {
+                        MessageBox.Show($"Invalid DODID format for gunner '{entry.GunnerName}': {entry.GunnerDodId}. DODID must be exactly 10 digits.",
+                            "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        continue;
+                    }
+
+                    // Validate COF score
+                    var cofScore = CalculateCrewServedCofScore(entry, weapon);
+                    if (!cofScore.HasValue || cofScore.Value < 100)
+                    {
+                        MessageBox.Show($"Invalid COF score for entry '{entry.GunnerName}': {cofScore}. COF score must be >= 100.",
+                            "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        continue;
+                    }
+
+                    // Set crew member data
+                    session.GunnerName = entry.GunnerName;
+                    session.GunnerDODID = entry.GunnerDodId;
+                    session.GunnerRankRate = entry.GunnerRankRate;
+                    session.AssistantGunnerName = entry.AssistantGunnerName;
+                    session.AssistantGunnerDODID = entry.AssistantGunnerDodId;
+                    session.AssistantGunnerRankRate = entry.AssistantGunnerRankRate;
+                    session.AmmunitionHandlerName = entry.AmmunitionHandlerName;
+                    session.AmmunitionHandlerDODID = entry.AmmunitionHandlerDodId;
+                    session.AmmunitionHandlerRankRate = entry.AmmunitionHandlerRankRate;
+                    entry.COFScore = cofScore;
+                    session.CourseOfFireScore = cofScore;
+                    session.IsQualified = entry.IsQualified;
+
+                    // Save session
+                    int sessionId = await sessionRepo.AddSessionAsync(dbContext, session);
+
+                    // Find or create personnel for gunner
+                    var personnel = await personnelRepo.GetPersonnelByDODIdAsync(dbContext, entry.GunnerDodId);
+                    if (personnel == null)
+                    {
+                        MessageBox.Show($"Personnel not found for DODID: {entry.GunnerDodId}. Please add personnel first.",
+                            "Personnel Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        continue;
+                    }
+
+                    // Create qualification for gunner
+                    int qualId = await crewServedService.CreateQualificationFromSessionAsync(dbContext, session, personnel.Id);
+                    savedCount++;
+
+                    // Generate PDF if this is the first entry
+                    if (string.IsNullOrEmpty(pdfPath))
+                    {
+                        try
+                        {
+                            pdfPath = await Generate3591_2PdfForSession(session, cswEntries.ToList());
+                            if (!string.IsNullOrWhiteSpace(pdfPath))
+                            {
+                                await sessionRepo.UpdateSessionPdfFilePathAsync(dbContext, sessionId, pdfPath);
+                            }
+                        }
+                        catch (Exception pdfEx)
+                        {
+                            MessageBox.Show($"Warning: PDF generation failed: {pdfEx.Message}", "PDF Generation Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+                    }
+                }
+
+                if (savedCount > 0)
+                {
+                    string successMessage = $"3591/2 Form Generated and Added to Training Jackets.\nDashboard Updated.\n\nSaved {savedCount} crew served weapon qualification(s).";
+                    if (!string.IsNullOrEmpty(pdfPath))
+                    {
+                        successMessage += $"\nGenerated filled 3591/2 PDF: {Path.GetFileName(pdfPath)}";
+                    }
+                    MessageBox.Show(successMessage, "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    if (!string.IsNullOrWhiteSpace(pdfPath) && File.Exists(pdfPath))
+                    {
+                        try
+                        {
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = pdfPath,
+                                UseShellExecute = true
+                            });
+                        }
+                        catch (Exception openEx)
+                        {
+                            MessageBox.Show($"PDF generated but could not open automatically: {openEx.Message}", "Open PDF Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+                    }
+                    
+                    // Refresh dashboard
+                    await LoadData();
+                }
+                else
+                {
+                    MessageBox.Show("No valid entries were saved.", "No Data", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving 3591/2 form: {ex.Message}\n\nStack trace: {ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                dbContext?.Dispose();
+            }
+        }
+
+        private async Task<string> Generate3591_2PdfForSession(CrewServedWeaponSession session, List<CrewServedWeaponEntry> entries)
+        {
+            await Task.CompletedTask;
+
+            var templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "3591_2QualTrack.pdf");
+            var outputDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GeneratedForms");
+
+            var fieldMap = new CrewServedWeaponPdfFieldMap
+            {
+                // Session-level fields (top section)
+                ShipStation = "Ship",
+                DivisionActivity = "Division",
+                Weapon = "Weapons",
+                RangeNameLocation = "Range Name",
+                DateOfFiring = "Date Firing",
+                PageNumber = "Pg_Num",
+                PageTotal = "Pg_Den",
+
+                // Bottom signature fields
+                Signature = "Signature",
+                SignatureDate = "Signature Date",
+
+                // Other session fields (to be mapped later)
+                InstructorName = string.Empty,
+                InstructorRankRate = string.Empty,
+
+                // Entry-row fields (use "{row}" where the PDF expects a row number)
+                NamePattern = "Name{row}",
+                RankPattern = "Rank{row}",
+                LightFreeP1Pattern = "light_FreeP1_{row}",
+                LightFreeP2Pattern = "light_FreeP2_{row}",
+                LightFreeP3Pattern = "light_FreeP3_{row}",
+                LightFreeP4Pattern = "light_FreeP4_{row}",
+                LightFreeP5Pattern = "light_FreeP5_{row}",
+                LightFreeP6Pattern = "light_FreeP6_{row}",
+                LightTeP1Pattern = "light_teP1_{row}",
+                LightTeP2Pattern = "light_teP2_{row}",
+                LightTeP3Pattern = "light_teP3_{row}",
+                LightTeP4Pattern = "light_teP4_{row}",
+                LightTeP5Pattern = "light_teP5_{row}",
+                HeavyFreeP1Pattern = "heavy_FreeP1_{row}",
+                HeavyFreeP2Pattern = "heavy_FreeP2_{row}",
+                HeavyFreeP3Pattern = "heavy_FreeP3_{row}",
+                HeavyFreeP4Pattern = "heavy_FreeP4_{row}",
+                HeavyFreeP5Pattern = "heavy_FreeP5_{row}",
+                HeavyFreeP6Pattern = "heavy_FreeP6_{row}",
+                HeavyTeP1Pattern = "heavy_teP1_{row}",
+                HeavyTeP2Pattern = "heavy_teP2_{row}",
+                HeavyTeP3Pattern = "heavy_teP3_{row}",
+                HeavyTeP4Pattern = "heavy_teP4_{row}",
+                HeavyTeP5Pattern = "heavy_teP5_{row}"
+            };
+
+            var pdfService = new CrewServedWeaponPdfGenerationService(templatePath, outputDir, fieldMap);
+            return pdfService.Generate3591_2Pdf(session, entries);
+        }
+
+        private void CSW_OpenGeneratedForms_Click(object sender, RoutedEventArgs e)
+        {
+            string formsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GeneratedForms");
+            if (Directory.Exists(formsDir))
+            {
+                Process.Start("explorer.exe", formsDir);
+            }
+            else
+            {
+                MessageBox.Show("Generated forms directory not found.", "Directory Not Found", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
         }
     }
 } 

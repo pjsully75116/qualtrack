@@ -41,7 +41,7 @@
                         <CheckBox x:Name="M4M16CheckBox" Content="M4/M16" IsChecked="True" Margin="0,5"/>
                         <CheckBox x:Name="M500CheckBox" Content="M500" IsChecked="True" Margin="0,5"/>
                         <CheckBox x:Name="M240CheckBox" Content="M240" IsChecked="True" Margin="0,5"/>
-                        <CheckBox x:Name="M2CheckBox" Content="M2" IsChecked="True" Margin="0,5"/>
+                        <CheckBox x:Name="M2CheckBox" Content=".50" IsChecked="True" Margin="0,5"/>
                     </StackPanel>
                 </GroupBox>
                 

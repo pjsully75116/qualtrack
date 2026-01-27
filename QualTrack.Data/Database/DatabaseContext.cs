@@ -50,6 +50,7 @@ namespace QualTrack.Data.Database
             CreateOcrExtractionsTable(connection);
             CreateQualificationSessionsTable(connection);
             CreateDD2760FormsTable(connection);
+            CreateCrewServedWeaponSessionsTable(connection);
             
             // Run database migrations
             RunDatabaseMigrations(connection);
@@ -126,6 +127,22 @@ namespace QualTrack.Data.Database
                 {
                     CreateAAEScreeningFormsTable(connection);
                     Console.WriteLine("Migration: Added aae_screening_forms table");
+                }
+
+                // Migration 8: Add crew_served_weapon_sessions table if it doesn't exist
+                if (!TableExists(connection, "crew_served_weapon_sessions"))
+                {
+                    CreateCrewServedWeaponSessionsTable(connection);
+                    Console.WriteLine("Migration: Added crew_served_weapon_sessions table");
+                }
+
+                // Migration 9: Add crew_served_weapon_session_id column to qualifications table if it doesn't exist
+                if (!ColumnExists(connection, "qualifications", "crew_served_weapon_session_id"))
+                {
+                    var command = connection.CreateCommand();
+                    command.CommandText = "ALTER TABLE qualifications ADD COLUMN crew_served_weapon_session_id INTEGER";
+                    command.ExecuteNonQuery();
+                    Console.WriteLine("Migration: Added crew_served_weapon_session_id column to qualifications table");
                 }
             }
             catch (Exception ex)
@@ -440,6 +457,39 @@ namespace QualTrack.Data.Database
                 addIsCertifiedCommand.CommandText = "ALTER TABLE dd2760_forms ADD COLUMN is_certified INTEGER DEFAULT 0";
                 addIsCertifiedCommand.ExecuteNonQuery();
             }
+            command.ExecuteNonQuery();
+        }
+
+        private void CreateCrewServedWeaponSessionsTable(SQLiteConnection connection)
+        {
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                CREATE TABLE IF NOT EXISTS crew_served_weapon_sessions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ship_station TEXT NOT NULL,
+                    division_activity TEXT NOT NULL,
+                    weapon TEXT NOT NULL,
+                    range_name_location TEXT NOT NULL,
+                    date_of_firing TEXT,
+                    gunner_name TEXT,
+                    gunner_rank_rate TEXT,
+                    gunner_dodid TEXT,
+                    assistant_gunner_name TEXT,
+                    assistant_gunner_rank_rate TEXT,
+                    assistant_gunner_dodid TEXT,
+                    ammunition_handler_name TEXT,
+                    ammunition_handler_rank_rate TEXT,
+                    ammunition_handler_dodid TEXT,
+                    course_of_fire_score INTEGER,
+                    is_qualified INTEGER DEFAULT 0,
+                    instructor_name TEXT,
+                    instructor_rank_rate TEXT,
+                    rso_signature TEXT,
+                    rso_signature_rate TEXT,
+                    rso_signature_date TEXT,
+                    pdf_file_path TEXT,
+                    created_date TEXT NOT NULL
+                )";
             command.ExecuteNonQuery();
         }
 

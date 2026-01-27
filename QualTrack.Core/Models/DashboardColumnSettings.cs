@@ -16,6 +16,7 @@ namespace QualTrack.Core.Models
         public bool ShowM500 { get; set; } = true;
         public bool ShowM240 { get; set; } = true;
         public bool ShowM2 { get; set; } = true;
+        public bool ShowM2A1 { get; set; } = true;
 
         // Duty Section Columns
         public bool ShowDutySection3 { get; set; } = true;
@@ -47,6 +48,7 @@ namespace QualTrack.Core.Models
                 ShowM500 = this.ShowM500,
                 ShowM240 = this.ShowM240,
                 ShowM2 = this.ShowM2,
+                ShowM2A1 = this.ShowM2A1,
                 ShowDutySection3 = this.ShowDutySection3,
                 ShowDutySection6 = this.ShowDutySection6,
                 ShowDateQualified = this.ShowDateQualified,

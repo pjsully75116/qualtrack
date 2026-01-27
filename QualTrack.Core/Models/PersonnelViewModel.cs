@@ -38,6 +38,8 @@ namespace QualTrack.Core.Models
         public string M500Qualified => HasQualification("M500") ? "X" : "";
         public string M240Qualified => HasQualification("M240") ? "X" : "";
         public string M2Qualified => HasQualification("M2") ? "X" : "";
+        public string M2A1Qualified => HasQualification("M2A1") ? "X" : "";
+        public string FiftyCalQualified => HasQualification("M2") || HasQualification("M2A1") ? "X" : "";
 
         // Duty section properties for dashboard columns
         public string DutySection3Display => GetDutySectionDisplay("3");
@@ -61,6 +63,8 @@ namespace QualTrack.Core.Models
         public Brush M500Color => GetWeaponQualificationColor("M500");
         public Brush M240Color => GetWeaponQualificationColor("M240");
         public Brush M2Color => GetWeaponQualificationColor("M2");
+        public Brush M2A1Color => GetWeaponQualificationColor("M2A1");
+        public Brush FiftyCalColor => GetWeaponQualificationColorForAny("M2A1", "M2");
 
         // DD2760 Form Status
         public string DD2760Status => GetDD2760Status();
@@ -174,6 +178,27 @@ namespace QualTrack.Core.Models
                 return Brushes.Orange;
 
             // Otherwise, GREEN (before sustainment window or already sustained)
+            return Brushes.LightGreen;
+        }
+
+        private Brush GetWeaponQualificationColorForAny(params string[] weapons)
+        {
+            var qualification = Qualifications.FirstOrDefault(q => weapons.Contains(q.Weapon));
+            if (qualification == null || qualification.Status == null)
+                return Brushes.Transparent;
+
+            var status = qualification.Status;
+            var today = DateTime.Today;
+
+            if (status.IsDisqualified)
+                return Brushes.Transparent;
+
+            if (status.SustainmentDue)
+                return Brushes.Yellow;
+
+            if (status.DaysUntilExpiration <= 30)
+                return Brushes.Orange;
+
             return Brushes.LightGreen;
         }
 

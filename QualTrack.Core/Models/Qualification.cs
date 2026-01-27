@@ -11,6 +11,7 @@ namespace QualTrack.Core.Models
         public int Category { get; set; }
         public DateTime DateQualified { get; set; }
         public int? QualificationSessionId { get; set; } // Link to 3591/1 session
+        public int? CrewServedWeaponSessionId { get; set; } // Link to 3591/2 session (for M240, M2)
         public QualificationStatus? Status { get; set; }
         public QualificationDetails? Details { get; set; }
 

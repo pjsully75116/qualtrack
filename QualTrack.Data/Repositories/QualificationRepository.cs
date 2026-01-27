@@ -15,7 +15,7 @@ namespace QualTrack.Data.Repositories
             using var connection = dbContext.GetConnection();
             var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT q.id, q.personnel_id, q.weapon, q.category, q.date_qualified, q.qualification_session_id,
+                SELECT q.id, q.personnel_id, q.weapon, q.category, q.date_qualified, q.qualification_session_id, q.crew_served_weapon_session_id,
                        qd.hqc_score, qd.nhqc_score, qd.hllc_score, qd.hpwc_score,
                        qd.rqc_score, qd.rlc_score, qd.spwc_score, qd.cof_score,
                        qd.cswi, qd.instructor, qd.remarks, qd.qualified_underway,
@@ -37,7 +37,9 @@ namespace QualTrack.Data.Repositories
                     Category = reader.GetInt32(reader.GetOrdinal("category")),
                     DateQualified = DateTime.Parse(reader.GetString(reader.GetOrdinal("date_qualified"))),
                     QualificationSessionId = reader.IsDBNull(reader.GetOrdinal("qualification_session_id")) ? null : 
-                                            reader.GetInt32(reader.GetOrdinal("qualification_session_id"))
+                                            reader.GetInt32(reader.GetOrdinal("qualification_session_id")),
+                    CrewServedWeaponSessionId = reader.IsDBNull(reader.GetOrdinal("crew_served_weapon_session_id")) ? null :
+                                                reader.GetInt32(reader.GetOrdinal("crew_served_weapon_session_id"))
                 };
                 
                 // Load qualification details if present
@@ -74,7 +76,7 @@ namespace QualTrack.Data.Repositories
             using var connection = dbContext.GetConnection();
             var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT q.id, q.personnel_id, q.weapon, q.category, q.date_qualified, q.qualification_session_id,
+                SELECT q.id, q.personnel_id, q.weapon, q.category, q.date_qualified, q.qualification_session_id, q.crew_served_weapon_session_id,
                        qd.hqc_score, qd.nhqc_score, qd.hllc_score, qd.hpwc_score,
                        qd.rqc_score, qd.rlc_score, qd.spwc_score, qd.cof_score,
                        qd.cswi, qd.instructor, qd.remarks, qd.qualified_underway,
@@ -128,7 +130,7 @@ namespace QualTrack.Data.Repositories
             using var connection = dbContext.GetConnection();
             var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT q.id, q.personnel_id, q.weapon, q.category, q.date_qualified,
+                SELECT q.id, q.personnel_id, q.weapon, q.category, q.date_qualified, q.qualification_session_id, q.crew_served_weapon_session_id,
                        qd.hqc_score, qd.nhqc_score, qd.hllc_score, qd.hpwc_score,
                        qd.rqc_score, qd.rlc_score, qd.spwc_score, qd.cof_score,
                        qd.cswi, qd.instructor, qd.remarks, qd.qualified_underway,
@@ -183,14 +185,15 @@ namespace QualTrack.Data.Repositories
             using var connection = dbContext.GetConnection();
             var command = connection.CreateCommand();
             command.CommandText = @"
-                INSERT INTO qualifications (personnel_id, weapon, category, date_qualified, qualification_session_id)
-                VALUES (@personnelId, @weapon, @category, @dateQualified, @sessionId);
+                INSERT INTO qualifications (personnel_id, weapon, category, date_qualified, qualification_session_id, crew_served_weapon_session_id)
+                VALUES (@personnelId, @weapon, @category, @dateQualified, @sessionId, @crewServedSessionId);
                 SELECT last_insert_rowid();";
             command.Parameters.AddWithValue("@personnelId", qualification.PersonnelId);
             command.Parameters.AddWithValue("@weapon", qualification.Weapon);
             command.Parameters.AddWithValue("@category", qualification.Category);
             command.Parameters.AddWithValue("@dateQualified", qualification.DateQualified.ToString("yyyy-MM-dd"));
             command.Parameters.AddWithValue("@sessionId", qualification.QualificationSessionId ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@crewServedSessionId", qualification.CrewServedWeaponSessionId ?? (object)DBNull.Value);
             
             var id = Convert.ToInt32(await command.ExecuteScalarAsync());
             
@@ -265,7 +268,7 @@ namespace QualTrack.Data.Repositories
             using var connection = dbContext.GetConnection();
             var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT q.id, q.personnel_id, q.weapon, q.category, q.date_qualified,
+                SELECT q.id, q.personnel_id, q.weapon, q.category, q.date_qualified, q.qualification_session_id, q.crew_served_weapon_session_id,
                        qd.hqc_score, qd.nhqc_score, qd.hllc_score, qd.hpwc_score,
                        qd.rqc_score, qd.rlc_score, qd.spwc_score, qd.cof_score,
                        qd.cswi, qd.instructor, qd.remarks, qd.qualified_underway,
