@@ -95,6 +95,8 @@ namespace QualTrack.UI.Services
                 var totalPages = Math.Max(1, (int)Math.Ceiling(entries.Count / 20.0));
                 SetFieldValueIfMapped(form, _fieldMap.PageNumber, "1");
                 SetFieldValueIfMapped(form, _fieldMap.PageTotal, totalPages.ToString());
+                SetFieldStyleIfMapped(form, _fieldMap.PageNumber, 12f);
+                SetFieldStyleIfMapped(form, _fieldMap.PageTotal, 12f);
                 SetFieldValueIfMapped(form, _fieldMap.InstructorName, session.InstructorName ?? string.Empty);
                 SetFieldValueIfMapped(form, _fieldMap.InstructorRankRate, session.InstructorRankRate ?? string.Empty);
                 SetFieldValueIfMapped(form, _fieldMap.Signature, session.RsoSignature ?? string.Empty);
@@ -172,6 +174,24 @@ namespace QualTrack.UI.Services
             }
 
             SetFieldValue(form, value, fieldName);
+        }
+
+        private static void SetFieldStyleIfMapped(AcroFields form, string? fieldName, float fontSize)
+        {
+            if (string.IsNullOrWhiteSpace(fieldName))
+            {
+                return;
+            }
+
+            try
+            {
+                form.SetFieldProperty(fieldName, "alignment", iTextSharp.text.Element.ALIGN_CENTER, null);
+                form.SetFieldProperty(fieldName, "textsize", fontSize, null);
+            }
+            catch
+            {
+                // Best-effort styling; ignore if field doesn't support it.
+            }
         }
 
         private static void SetFieldValue(AcroFields form, string value, params string[] fieldNames)

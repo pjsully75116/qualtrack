@@ -14,15 +14,21 @@ namespace QualTrack.UI.Services
         private readonly QualificationService _qualificationService;
         private readonly ICrewServedWeaponSessionRepository _sessionRepository;
         private readonly IQualificationRepository _qualificationRepository;
+        private readonly IRbacService? _rbacService;
+        private readonly ICurrentUserContext? _currentUserContext;
 
         public CrewServedWeaponService(
             QualificationService qualificationService,
             ICrewServedWeaponSessionRepository sessionRepository,
-            IQualificationRepository qualificationRepository)
+            IQualificationRepository qualificationRepository,
+            IRbacService? rbacService = null,
+            ICurrentUserContext? currentUserContext = null)
         {
             _qualificationService = qualificationService;
             _sessionRepository = sessionRepository;
             _qualificationRepository = qualificationRepository;
+            _rbacService = rbacService;
+            _currentUserContext = currentUserContext;
         }
 
         /// <summary>
@@ -71,6 +77,8 @@ namespace QualTrack.UI.Services
             CrewServedWeaponSession session,
             int personnelId)
         {
+            EnsurePermission(RbacPermission.ManageCrewServed, "Create crew-served qualification");
+
             if (!session.IsQualified || !session.CourseOfFireScore.HasValue)
             {
                 throw new InvalidOperationException("Cannot create qualification from unqualified session");
@@ -93,6 +101,19 @@ namespace QualTrack.UI.Services
             };
 
             return await _qualificationRepository.AddQualificationAsync(dbContext, qualification);
+        }
+
+        private void EnsurePermission(RbacPermission permission, string action)
+        {
+            if (_rbacService == null || _currentUserContext == null)
+            {
+                return;
+            }
+
+            if (!_rbacService.HasPermission(_currentUserContext.Role, permission))
+            {
+                throw new UnauthorizedAccessException($"Access denied for action: {action} (role: {_currentUserContext.Role}).");
+            }
         }
 
         /// <summary>

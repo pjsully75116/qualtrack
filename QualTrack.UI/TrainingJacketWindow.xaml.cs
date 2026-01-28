@@ -94,39 +94,7 @@ namespace QualTrack.UI
                 Form2760StatusTextBlock.Foreground = System.Windows.Media.Brushes.Red;
             }
             
-            // AA&E Screening
-            if (adminRequirements?.AAEScreeningDate.HasValue == true)
-            {
-                AAEScreeningDateTextBlock.Text = adminRequirements.AAEScreeningDate.Value.ToString("yyyy-MM-dd");
-                AAEScreeningDateTextBlock.Foreground = System.Windows.Media.Brushes.Black;
-                
-                // Use the same logic as PersonnelViewModel
-                var expirationDate = adminRequirements.AAEScreeningDate.Value.AddYears(1);
-                var daysUntilExpiration = (expirationDate - DateTime.Today).Days;
-                
-                if (daysUntilExpiration < 0)
-                {
-                    AAEScreeningStatusTextBlock.Text = "EXPIRED";
-                    AAEScreeningStatusTextBlock.Foreground = System.Windows.Media.Brushes.Red;
-                }
-                else if (daysUntilExpiration <= 30)
-                {
-                    AAEScreeningStatusTextBlock.Text = $"Expires in {daysUntilExpiration} days";
-                    AAEScreeningStatusTextBlock.Foreground = System.Windows.Media.Brushes.Orange;
-                }
-                else
-                {
-                    AAEScreeningStatusTextBlock.Text = "Valid";
-                    AAEScreeningStatusTextBlock.Foreground = System.Windows.Media.Brushes.Green;
-                }
-            }
-            else
-            {
-                AAEScreeningDateTextBlock.Text = "Not completed";
-                AAEScreeningDateTextBlock.Foreground = System.Windows.Media.Brushes.Gray;
-                AAEScreeningStatusTextBlock.Text = "Required";
-                AAEScreeningStatusTextBlock.Foreground = System.Windows.Media.Brushes.Red;
-            }
+            // AA&E Screening (populated by LoadAAEForms)
             
             // Deadly Force Training
             if (adminRequirements?.DeadlyForceTrainingDate.HasValue == true)
@@ -456,6 +424,38 @@ namespace QualTrack.UI
                     AAEStatusTextBlock.Text = _aaeForms.Count == 0 
                         ? "No AA&E Forms" 
                         : $"Found {_aaeForms.Count} AA&E Form(s)";
+
+                    if (_aaeForms.Count > 0)
+                    {
+                        var earliestDate = _aaeForms.Min(f => f.DateCompleted).Date;
+                        AAEScreeningDateTextBlock.Text = earliestDate.ToString("yyyy-MM-dd");
+                        AAEScreeningDateTextBlock.Foreground = System.Windows.Media.Brushes.Black;
+
+                        var expirationDate = earliestDate.AddYears(1);
+                        var daysUntilExpiration = (expirationDate - DateTime.Today).Days;
+                        if (daysUntilExpiration < 0)
+                        {
+                            AAEScreeningStatusTextBlock.Text = "EXPIRED";
+                            AAEScreeningStatusTextBlock.Foreground = System.Windows.Media.Brushes.Red;
+                        }
+                        else if (daysUntilExpiration <= 30)
+                        {
+                            AAEScreeningStatusTextBlock.Text = $"Expires in {daysUntilExpiration} days";
+                            AAEScreeningStatusTextBlock.Foreground = System.Windows.Media.Brushes.Orange;
+                        }
+                        else
+                        {
+                            AAEScreeningStatusTextBlock.Text = "Valid";
+                            AAEScreeningStatusTextBlock.Foreground = System.Windows.Media.Brushes.Green;
+                        }
+                    }
+                    else
+                    {
+                        AAEScreeningDateTextBlock.Text = "Not completed";
+                        AAEScreeningDateTextBlock.Foreground = System.Windows.Media.Brushes.Gray;
+                        AAEScreeningStatusTextBlock.Text = "Required";
+                        AAEScreeningStatusTextBlock.Foreground = System.Windows.Media.Brushes.Red;
+                    }
                 });
             }
             catch (Exception ex)

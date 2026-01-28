@@ -10,7 +10,8 @@ namespace QualTrack.UI.Models
         public SailorDisplayModel(int id, string lastName, string firstName, string dodId, string rank, string rate)
         {
             Id = id;
-            DisplayName = $"{lastName}, {firstName}";
+            var rankRate = $"{rank} {rate}".Trim();
+            DisplayName = $"{lastName}, {firstName} ({dodId}) {rankRate}".Trim();
             DODId = dodId;
             RankRate = $"{rank} {rate}".Trim();
         }

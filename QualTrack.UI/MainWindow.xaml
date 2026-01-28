@@ -12,24 +12,30 @@
         <!-- Menu Bar -->
         <Menu Grid.Row="0">
             <MenuItem Header="File">
-                <MenuItem Header="Export Qualifications" Click="ExportQualifications_Click"/>
-                <MenuItem Header="Load Test Data" Click="LoadTestData_Click"/>
+                <MenuItem x:Name="ExportQualificationsMenuItem" Header="Export Qualifications" Click="ExportQualifications_Click"/>
+                <MenuItem x:Name="LoadTestDataMenuItem" Header="Load Test Data" Click="LoadTestData_Click"/>
                 <Separator/>
                 <MenuItem Header="Exit" Click="Exit_Click"/>
             </MenuItem>
             <MenuItem Header="Personnel">
-                <MenuItem Header="Add Personnel" Click="AddPersonnel_Click"/>
+                <MenuItem x:Name="AddPersonnelMenuItem" Header="Add Personnel" Click="AddPersonnel_Click"/>
                 <MenuItem Header="View All Personnel" Click="ViewPersonnel_Click"/>
             </MenuItem>
             <MenuItem Header="Qualifications">
-                <MenuItem Header="Add Qualification" Click="AddQualification_Click"/>
+                <MenuItem x:Name="AddQualificationMenuItem" Header="Add Qualification" Click="AddQualification_Click"/>
                 <MenuItem Header="View All Qualifications" Click="ViewQualifications_Click"/>
+            </MenuItem>
+            <MenuItem x:Name="RoleMenu" Header="Role">
+                <MenuItem x:Name="RoleAdminMenuItem" Header="Admin" Tag="Admin" Click="RoleMenuItem_Click" IsCheckable="True"/>
+                <MenuItem x:Name="RoleSamiMenuItem" Header="SAMI" Tag="SAMI" Click="RoleMenuItem_Click" IsCheckable="True"/>
+                <MenuItem x:Name="RoleCswiMenuItem" Header="CSWI" Tag="CSWI" Click="RoleMenuItem_Click" IsCheckable="True"/>
+                <MenuItem x:Name="RoleViewerMenuItem" Header="Viewer" Tag="Viewer" Click="RoleMenuItem_Click" IsCheckable="True"/>
             </MenuItem>
         </Menu>
         
         <!-- Main Content -->
         <TabControl x:Name="MainTabControl" Grid.Row="1" Margin="10" SelectionChanged="MainTabControl_SelectionChanged">
-            <TabItem Header="Dashboard">
+            <TabItem x:Name="DashboardTab" Header="Dashboard">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -70,13 +76,13 @@
                     
                     <!-- Dashboard Controls and Color Legend -->
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
-                        <Button Content="Dashboard Setup" Click="DashboardSetup_Click" Margin="0,0,10,0" Padding="15,5"/>
+                        <Button x:Name="DashboardSetupButton" Content="Dashboard Setup" Click="DashboardSetup_Click" Margin="0,0,10,0" Padding="15,5"/>
                         <Button Content="Refresh" Click="Refresh_Click" Margin="0,0,20,0" Padding="15,5"/>
                         
                         <!-- Color Legend -->
                         <TextBlock Text="Weapon Qualification Colors: " FontWeight="Bold" VerticalAlignment="Center" Margin="20,0,0,0"/>
                         <Border Background="LightGreen" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
-                            <TextBlock Text="Green = Valid" FontSize="10"/>
+                            <TextBlock Text="Green = Current" FontSize="10"/>
                         </Border>
                         <Border Background="Yellow" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
                             <TextBlock Text="Yellow = Sustainment Due" FontSize="10"/>
@@ -87,14 +93,16 @@
                         <Border Background="Transparent" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
                             <TextBlock Text="No Color = Not Qualified" FontSize="10"/>
                         </Border>
-                        <Border Background="Green" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
-                            <TextBlock Text="Green = Valid DD2760" FontSize="10"/>
-                        </Border>
-                        <Border Background="Orange" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
-                            <TextBlock Text="Orange = DD2760 Expires Soon" FontSize="10"/>
-                        </Border>
                         <Border Background="Red" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
-                            <TextBlock Text="Red = DD2760 Expired" FontSize="10"/>
+                            <TextBlock Text="Red = Admin UNSAT" FontSize="10"/>
+                        </Border>
+                        <Border Background="LightGreen" BorderBrush="Gray" BorderThickness="1" Margin="5,0" Padding="5,2">
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Width="14" Height="12" Margin="0,0,4,0">
+                                    <TextBlock Text="X" Foreground="Red" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock Text="Red X = Admin not current (gun-only)" FontSize="10"/>
+                            </StackPanel>
                         </Border>
                     </StackPanel>
                     
@@ -121,7 +129,7 @@
                 </Grid>
             </TabItem>
             
-            <TabItem Header="Add Admin">
+            <TabItem x:Name="AddAdminTab" Header="Electronic Admin">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <Grid Margin="20">
                         <Grid.RowDefinitions>
@@ -150,6 +158,7 @@
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -163,7 +172,12 @@
                                 <Button Grid.Row="0" Grid.Column="2" Content="Search" Click="SearchSailor_Click" Margin="10,5" Padding="15,5"/>
                                 <TextBlock Grid.Row="0" Grid.Column="3" x:Name="SearchResultTextBlock" Margin="10,5" VerticalAlignment="Center" Foreground="Gray"/>
                                 
-                                <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Text="Or fill out the form below to create a new sailor" 
+                                <Label Grid.Row="1" Grid.Column="0" Content="Select Match:" VerticalAlignment="Center" Margin="0,5"/>
+                                <ComboBox x:Name="AdminSearchResultsComboBox" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3"
+                                          Margin="10,5" DisplayMemberPath="DisplayName"
+                                          SelectionChanged="AdminSearchResultsComboBox_SelectionChanged" Visibility="Collapsed"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Text="Or fill out the form below to create a new sailor" 
                                            Margin="10,5,0,0" FontStyle="Italic" Foreground="Gray"/>
                             </Grid>
                         </GroupBox>
@@ -629,18 +643,32 @@
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="200"/>
                                 </Grid.ColumnDefinitions>
                                 
                                 <DatePicker x:Name="DeadlyForceDatePicker" Grid.Row="0" Grid.Column="0" Margin="0,5"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Text="Quarterly requirement - expires 3 months from completion date" 
+                                <TextBlock Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3" Text="Quarterly requirement - expires 3 months from completion date" 
                                            Margin="10,5" VerticalAlignment="Center" Foreground="Gray" FontStyle="Italic"/>
+
+                                <Label Grid.Row="1" Grid.Column="0" Content="Signature (Trainee):" Margin="0,5"/>
+                                <TextBox x:Name="DeadlyForceTraineeSignatureTextBox" Grid.Row="1" Grid.Column="1" Margin="10,5"/>
+                                <Label Grid.Row="1" Grid.Column="2" Content="Date (Trainee):" Margin="10,5,5,5"/>
+                                <DatePicker x:Name="DeadlyForceTraineeDatePicker" Grid.Row="1" Grid.Column="3" Margin="5,5,0,5"/>
+
+                                <Label Grid.Row="2" Grid.Column="0" Content="Signature (Observer):" Margin="0,5"/>
+                                <TextBox x:Name="DeadlyForceObserverSignatureTextBox" Grid.Row="2" Grid.Column="1" Margin="10,5"/>
+                                <Label Grid.Row="2" Grid.Column="2" Content="Date (Observer):" Margin="10,5,5,5"/>
+                                <DatePicker x:Name="DeadlyForceObserverDatePicker" Grid.Row="2" Grid.Column="3" Margin="5,5,0,5"/>
                                 
                                 <!-- Submit Button -->
-                                <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Content="Submit Deadly Force Training" 
+                                <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" Content="Submit Deadly Force Training" 
                                         Click="SubmitDeadlyForceTrainingButton_Click" HorizontalAlignment="Right" Margin="0,10,0,0" Padding="20,5"/>
                             </Grid>
                         </GroupBox>
@@ -651,313 +679,13 @@
                 </ScrollViewer>
             </TabItem>
             
-            <TabItem Header="Electronic Admin">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="20">
-                        <TextBlock Text="Administrative Forms Management" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
-                        
-                        <!-- Admin Forms Selection -->
-                        <GroupBox Header="Select Administrative Form" Margin="0,0,0,20">
-                            <StackPanel Margin="10">
-                                <TextBlock Text="Choose the administrative form to add or update:" Margin="0,0,0,10"/>
-                                <ComboBox x:Name="AdminFormTypeComboBox" Width="300" Margin="0,0,0,10" SelectionChanged="AdminFormType_SelectionChanged">
-                                    <ComboBoxItem Content="DD2760 - Ammunition and Explosives Safety Qualification" Tag="DD2760"/>
-                                    <ComboBoxItem Content="AA&amp;E Screening - Ammunition and Explosives Screening" Tag="AAE" IsEnabled="False"/>
-                                    <ComboBoxItem Content="Deadly Force Training - Deadly Force Training Record" Tag="DeadlyForce" IsEnabled="False"/>
-                                </ComboBox>
-                                <TextBlock x:Name="AdminFormDescriptionText" Text="Select a form type to begin..." Foreground="Gray" FontStyle="Italic"/>
-                            </StackPanel>
-                        </GroupBox>
-                        
-                        <!-- Placeholder for DD2760 Form -->
-                        <GroupBox x:Name="DD2760PlaceholderGroupBox" Header="DD2760 Form" Margin="0,0,0,20" Visibility="Collapsed">
-                            <StackPanel Margin="20">
-                                <TextBlock Text="Input 2760 data here" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,20"/>
-                                <TextBlock Text="This is a placeholder for the DD2760 form functionality." FontSize="12" Foreground="Gray" HorizontalAlignment="Center" Margin="0,10"/>
-                                <TextBlock Text="The actual form implementation will be added here." FontSize="12" Foreground="Gray" HorizontalAlignment="Center" Margin="0,5"/>
-                            </StackPanel>
-                        </GroupBox>
-                        
-                        <!-- DD2760 Form Content -->
-                        <Grid x:Name="DD2760FormGrid" Visibility="Collapsed">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            
-                            <!-- Personnel Selection -->
-                            <GroupBox Grid.Row="0" Header="Personnel Selection" Margin="0,0,0,10">
-                                <Grid Margin="10">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <Label Grid.Row="0" Grid.Column="0" Content="Select Personnel:" VerticalAlignment="Center"/>
-                                    <ComboBox x:Name="DD2760PersonnelComboBox" Grid.Row="0" Grid.Column="1" Margin="10,0" 
-                                             DisplayMemberPath="FullName" SelectionChanged="DD2760Personnel_SelectionChanged"/>
-                                    <Button Grid.Row="0" Grid.Column="2" Content="Refresh List" Click="DD2760RefreshPersonnel_Click" Padding="10,5"/>
-                                    
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" x:Name="DD2760PersonnelStatusText" 
-                                               Text="Select personnel to add DD2760 form" Foreground="Gray" Margin="0,5,0,0"/>
-                                </Grid>
-                            </GroupBox>
-                            
-                            <!-- Form Details -->
-                            <GroupBox Grid.Row="1" Header="DD2760 Form Details" Margin="0,0,0,10">
-                                <Grid Margin="10">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <!-- Form Completion Date -->
-                                    <Label Grid.Row="0" Grid.Column="0" Content="Form Completion Date:" VerticalAlignment="Center"/>
-                                    <DatePicker Grid.Row="0" Grid.Column="1" x:Name="DD2760CompletionDatePicker" Margin="10,0" SelectedDateChanged="DD2760CompletionDate_Changed"/>
-                                    
-                                    <Label Grid.Row="0" Grid.Column="2" Content="Expiration Date:" VerticalAlignment="Center"/>
-                                    <DatePicker Grid.Row="0" Grid.Column="3" x:Name="DD2760ExpirationDatePicker" Margin="10,0" IsEnabled="False"/>
-                                    
-                                    <!-- Domestic Violence Question -->
-                                    <Label Grid.Row="1" Grid.Column="0" Content="Domestic Violence Response:" VerticalAlignment="Center" Margin="0,10,0,0"/>
-                                    <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="10,10,0,0">
-                                        <RadioButton x:Name="DD2760YesRadio" Content="Yes" Margin="0,0,20,0" GroupName="DomesticViolence" Checked="DD2760DomesticViolence_Changed"/>
-                                        <RadioButton x:Name="DD2760NoRadio" Content="No" Margin="0,0,20,0" GroupName="DomesticViolence" Checked="DD2760DomesticViolence_Changed"/>
-                                        <RadioButton x:Name="DD2760DontKnowRadio" Content="I don't know" GroupName="DomesticViolence" Checked="DD2760DomesticViolence_Changed"/>
-                                    </StackPanel>
-                                    
-                                    <!-- Initials and Date -->
-                                    <Label Grid.Row="2" Grid.Column="0" Content="Initials:" VerticalAlignment="Center" Margin="0,10,0,0"/>
-                                    <TextBox Grid.Row="2" Grid.Column="1" x:Name="DD2760InitialsTextBox" Margin="10,10,0,0" Width="100" MaxLength="10"/>
-                                    
-                                    <Label Grid.Row="2" Grid.Column="2" Content="Date (YYYYMMDD):" VerticalAlignment="Center" Margin="0,10,0,0"/>
-                                    <DatePicker Grid.Row="2" Grid.Column="3" x:Name="DD2760ElectronicDomesticViolenceDatePicker" Margin="10,10,0,0"/>
-                                    
-                                    <!-- Court Information (if Yes) -->
-                                    <GroupBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" Header="Court Information (if answered 'Yes')" Margin="0,10,0,0" x:Name="DD2760CourtInfoGroupBox" Visibility="Collapsed">
-                                        <Grid Margin="10">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            
-                                            <Label Grid.Row="0" Grid.Column="0" Content="Court/Jurisdiction:" VerticalAlignment="Center"/>
-                                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="DD2760ElectronicCourtJurisdictionTextBox" Margin="10,0"/>
-                                            
-                                            <Label Grid.Row="1" Grid.Column="0" Content="Docket/Case Number:" VerticalAlignment="Center"/>
-                                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="DD2760ElectronicDocketCaseNumberTextBox" Margin="10,0"/>
-                                            
-                                            <Label Grid.Row="2" Grid.Column="0" Content="Statute/Charge:" VerticalAlignment="Center"/>
-                                            <TextBox Grid.Row="2" Grid.Column="1" x:Name="DD2760ElectronicStatuteChargeTextBox" Margin="10,0"/>
-                                        </Grid>
-                                    </GroupBox>
-                                    
-                                    <!-- Certifier Information -->
-                                    <Label Grid.Row="4" Grid.Column="0" Content="Certifier Name:" VerticalAlignment="Center" Margin="0,10,0,0"/>
-                                    <TextBox Grid.Row="4" Grid.Column="1" x:Name="DD2760CertifierNameTextBox" Margin="10,10,0,0"/>
-                                    
-                                    <Label Grid.Row="4" Grid.Column="2" Content="Rank/Grade:" VerticalAlignment="Center" Margin="0,10,0,0"/>
-                                    <TextBox Grid.Row="4" Grid.Column="3" x:Name="DD2760CertifierRankTextBox" Margin="10,10,0,0"/>
-                                    
-                                    <Label Grid.Row="5" Grid.Column="0" Content="SSN:" VerticalAlignment="Center" Margin="0,10,0,0"/>
-                                    <TextBox Grid.Row="5" Grid.Column="1" x:Name="DD2760CertifierSSNTextBox" Margin="10,10,0,0" MaxLength="11"/>
-                                    
-                                    <Label Grid.Row="5" Grid.Column="2" Content="Organization:" VerticalAlignment="Center" Margin="0,10,0,0"/>
-                                    <TextBox Grid.Row="5" Grid.Column="3" x:Name="DD2760CertifierOrganizationTextBox" Margin="10,10,0,0"/>
-                                </Grid>
-                            </GroupBox>
-                            
-                            <!-- Action Buttons -->
-                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
-                                <Button Content="Generate PDF" Click="DD2760GeneratePdf_Click" Padding="20,5" Margin="0,0,10,0"/>
-                                <Button Content="Save Form" Click="DD2760SaveForm_Click" Padding="20,5" Margin="0,0,10,0"/>
-                                <Button Content="Clear Form" Click="DD2760ClearForm_Click" Padding="20,5"/>
-                            </StackPanel>
-                            
-                            <!-- Status -->
-                            <TextBlock Grid.Row="3" x:Name="DD2760StatusTextBlock" Text="" Margin="0,10,0,0" Foreground="Blue"/>
-                            
-                            <!-- Existing Forms -->
-                            <GroupBox Grid.Row="4" Header="Existing DD2760 Forms" Margin="0,10,0,0">
-                                <DataGrid x:Name="DD2760FormsDataGrid" Height="150" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Personnel" Binding="{Binding PersonnelName}" Width="150"/>
-                                        <DataGridTextColumn Header="Completion Date" Binding="{Binding DateCompleted, StringFormat=MM/dd/yyyy}" Width="120"/>
-                                        <DataGridTextColumn Header="Expiration Date" Binding="{Binding DateExpires, StringFormat=MM/dd/yyyy}" Width="120"/>
-                                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
-                                        <DataGridTemplateColumn Header="Actions" Width="100">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Button Content="View PDF" Click="DD2760ViewPdf_Click" Padding="5,2" Margin="0,0,5,0"/>
-                                                    </StackPanel>
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </GroupBox>
-                        </Grid>
-                        
-                        <!-- AA&E Form Content (Stub) -->
-                        <Grid x:Name="AAEFormGrid" Visibility="Collapsed">
-                            <StackPanel>
-                                <TextBlock Text="AA&amp;E Screening Form" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
-                                <TextBlock Text="This form will be implemented in a future update." Foreground="Gray" FontStyle="Italic"/>
-                            </StackPanel>
-                        </Grid>
-                        
-                        <!-- Deadly Force Form Content (Stub) -->
-                        <Grid x:Name="DeadlyForceFormGrid" Visibility="Collapsed">
-                            <StackPanel>
-                                <TextBlock Text="Deadly Force Training Form" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
-                                <TextBlock Text="This form will be implemented in a future update." Foreground="Gray" FontStyle="Italic"/>
-                            </StackPanel>
-                        </Grid>
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
-            
-            <TabItem Header="Support">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="20">
-                        <TextBlock Text="Support &amp; Development Tools" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
-                        
-                        <!-- Test Data Management -->
-                        <GroupBox Header="Test Data Management" Margin="0,0,0,20">
-                            <StackPanel Margin="10">
-                                <TextBlock Text="Development and testing tools for managing sample data." Margin="0,0,0,10"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <Button x:Name="AddTestDataButton" Content="Add Test Data (20 Sailors)" Click="AddTestDataButton_Click" Margin="0,0,10,0" Padding="20,5"/>
-                                    <Button x:Name="ClearDatabaseButton" Content="Clear Database" Click="ClearDatabaseButton_Click" Padding="20,5"/>
-                                </StackPanel>
-                                <TextBlock x:Name="TestDataStatusTextBlock" Text="" Margin="0,0,0,10"/>
-                            </StackPanel>
-                        </GroupBox>
-                        
-                        <!-- Performance Metrics -->
-                        <GroupBox Header="System Performance Metrics" Margin="0,0,0,20">
-                            <StackPanel Margin="10">
-                                <!-- Database Performance -->
-                                <Expander Header="Database Performance" Margin="0,0,0,10">
-                                    <Grid Margin="10">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        
-                                        <Label Grid.Row="0" Grid.Column="0" Content="Average Load Time:" FontWeight="Bold"/>
-                                        <TextBlock x:Name="AvgLoadTimeText" Grid.Row="0" Grid.Column="1" Text="0 ms" Margin="10,0"/>
-                                        <Label Grid.Row="0" Grid.Column="2" Content="Load Count:" FontWeight="Bold"/>
-                                        <TextBlock x:Name="LoadCountText" Grid.Row="0" Grid.Column="3" Text="0" Margin="10,0"/>
-                                        
-                                        <Label Grid.Row="1" Grid.Column="0" Content="Average Filter Time:" FontWeight="Bold"/>
-                                        <TextBlock x:Name="AvgFilterTimeText" Grid.Row="1" Grid.Column="1" Text="0 ms" Margin="10,0"/>
-                                        <Label Grid.Row="1" Grid.Column="2" Content="Filter Count:" FontWeight="Bold"/>
-                                        <TextBlock x:Name="FilterCountText" Grid.Row="1" Grid.Column="3" Text="0" Margin="10,0"/>
-                                        
-                                        <Label Grid.Row="2" Grid.Column="0" Content="Total Personnel:" FontWeight="Bold"/>
-                                        <TextBlock x:Name="TotalPersonnelText" Grid.Row="2" Grid.Column="1" Text="0" Margin="10,0"/>
-                                        <Label Grid.Row="2" Grid.Column="2" Content="Total Qualifications:" FontWeight="Bold"/>
-                                        <TextBlock x:Name="TotalQualificationsText" Grid.Row="2" Grid.Column="3" Text="0" Margin="10,0"/>
-                                    </Grid>
-                                </Expander>
-                                
-                                <!-- Cache Performance -->
-                                <Expander Header="Cache Performance" Margin="0,0,0,10">
-                                    <Grid Margin="10">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        
-                                        <Label Grid.Row="0" Grid.Column="0" Content="Cache Size:" FontWeight="Bold"/>
-                                        <TextBlock x:Name="CacheSizeText" Grid.Row="0" Grid.Column="1" Text="0 entries" Margin="10,0"/>
-                                        <Label Grid.Row="0" Grid.Column="2" Content="Expired Entries:" FontWeight="Bold"/>
-                                        <TextBlock x:Name="ExpiredEntriesText" Grid.Row="0" Grid.Column="3" Text="0" Margin="10,0"/>
-                                        
-                                        <Label Grid.Row="1" Grid.Column="0" Content="Cache Hit Rate:" FontWeight="Bold"/>
-                                        <TextBlock x:Name="CacheHitRateText" Grid.Row="1" Grid.Column="1" Text="0%" Margin="10,0"/>
-                                        <Button Grid.Row="1" Grid.Column="2" Content="Clear Cache" Click="ClearCache_Click" Margin="10,0" Padding="10,5"/>
-                                    </Grid>
-                                </Expander>
-                                
-                                <!-- System Status -->
-                                <Expander Header="System Status" Margin="0,0,0,10">
-                                    <Grid Margin="10">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        
-                                        <Label Grid.Row="0" Grid.Column="0" Content="Database Status:" FontWeight="Bold"/>
-                                        <TextBlock x:Name="DatabaseStatusText" Grid.Row="0" Grid.Column="1" Text="Connected" Margin="10,0" Foreground="Green"/>
-                                        <Label Grid.Row="0" Grid.Column="2" Content="Last Backup:" FontWeight="Bold"/>
-                                        <TextBlock x:Name="LastBackupText" Grid.Row="0" Grid.Column="3" Text="Never" Margin="10,0"/>
-                                        
-                                        <Label Grid.Row="1" Grid.Column="0" Content="System Uptime:" FontWeight="Bold"/>
-                                        <TextBlock x:Name="SystemUptimeText" Grid.Row="1" Grid.Column="1" Text="0 days, 0 hours" Margin="10,0"/>
-                                        <Label Grid.Row="1" Grid.Column="2" Content="Memory Usage:" FontWeight="Bold"/>
-                                        <TextBlock x:Name="MemoryUsageText" Grid.Row="1" Grid.Column="3" Text="0 MB" Margin="10,0"/>
-                                    </Grid>
-                                </Expander>
-                                
-                                <!-- Action Buttons -->
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
-                                    <Button Content="Export Performance Report" Click="ExportPerformanceReport_Click" Margin="5" Padding="15,5"/>
-                                    <Button Content="Reset Performance Counters" Click="ResetPerformanceCounters_Click" Margin="5" Padding="15,5"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </GroupBox>
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
             
 
 
 
 
 
-            <TabItem Header="3591/1 Digital Entry">
+            <TabItem x:Name="DigitalEntryTab" Header="3591/1 Digital Entry">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="20" Orientation="Vertical" Width="Auto">
                         <GroupBox Header="Session-Level Data" Margin="0,0,0,10">
@@ -1023,7 +751,7 @@
                                     
                                     <DataGrid x:Name="DE_SailorGrid" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="True" Height="250">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="150"/>
+                                            <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="150" IsReadOnly="True"/>
                                             <DataGridTextColumn Header="DoD ID" Binding="{Binding DodId}" Width="90" IsReadOnly="True"/>
                                             <DataGridTextColumn Header="Rank/Rate" Binding="{Binding RankRate}" Width="80" IsReadOnly="True"/>
                                             <DataGridTextColumn Header="NHQC" Binding="{Binding NHQC}" Width="60"/>
@@ -1075,7 +803,7 @@
                 </ScrollViewer>
             </TabItem>
             
-            <TabItem Header="3591/2 Digital Entry">
+            <TabItem x:Name="CrewServedTab" Header="3591/2 Digital Entry">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="20" Orientation="Vertical" Width="Auto">
                         <GroupBox Header="Session-Level Data" Margin="0,0,0,10">
@@ -1195,6 +923,9 @@
                                                 <TextBlock Text="Heavy Machine Gun (.50)" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,4"/>
                                             </Border>
                                             <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="13" BorderBrush="Black" BorderThickness="2,0,0,0"/>
+                                            <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" BorderBrush="Black" BorderThickness="2,0,0,0"/>
+                                            <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="8" BorderBrush="Black" BorderThickness="2,0,0,0"/>
+                                            <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="19" BorderBrush="Black" BorderThickness="2,0,0,0"/>
 
                                             <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Background="#FFF7F7F7" BorderBrush="#FFDDDDDD" BorderThickness="0,0,0,1">
                                                 <TextBlock Text="Sailor" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,3"/>
@@ -1215,8 +946,21 @@
 
                                         <DataGrid x:Name="CSW_EntryGrid" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="True" Height="300">
                                             <DataGrid.Columns>
-                                                <DataGridTextColumn Header="Name" Binding="{Binding GunnerName}" Width="140"/>
-                                                <DataGridTextColumn Header="Rank" Binding="{Binding GunnerRankRate}" Width="80"/>
+                                                <DataGridTextColumn Header="Name" Binding="{Binding GunnerName}" Width="140" IsReadOnly="True"/>
+                                                <DataGridTextColumn Header="Rank" Binding="{Binding GunnerRankRate}" Width="80" IsReadOnly="True">
+                                                    <DataGridTextColumn.CellStyle>
+                                                        <Style TargetType="DataGridCell">
+                                                            <Setter Property="BorderThickness" Value="0,0,2,0"/>
+                                                            <Setter Property="BorderBrush" Value="Black"/>
+                                                        </Style>
+                                                    </DataGridTextColumn.CellStyle>
+                                                    <DataGridTextColumn.HeaderStyle>
+                                                        <Style TargetType="DataGridColumnHeader">
+                                                            <Setter Property="BorderThickness" Value="0,0,2,0"/>
+                                                            <Setter Property="BorderBrush" Value="Black"/>
+                                                        </Style>
+                                                    </DataGridTextColumn.HeaderStyle>
+                                                </DataGridTextColumn>
 
                                                 <DataGridTextColumn Header="P1" Binding="{Binding LightFreeP1}" Width="55"/>
                                                 <DataGridTextColumn Header="P2" Binding="{Binding LightFreeP2}" Width="55"/>
@@ -1307,6 +1051,117 @@
                                 <TextBlock Text="⚠️ This banner will be removed before production" FontSize="10" FontStyle="Italic" Foreground="#856404" Margin="0,5,0,0"/>
                             </StackPanel>
                         </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem x:Name="SupportTab" Header="Support">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Support &amp; Development Tools" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
+                        
+                        <!-- Test Data Management -->
+                        <GroupBox Header="Test Data Management" Margin="0,0,0,20">
+                            <StackPanel Margin="10">
+                                <TextBlock Text="Development and testing tools for managing sample data." Margin="0,0,0,10"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <Button x:Name="AddTestDataButton" Content="Add Test Data (50 Sailors)" Click="AddTestDataButton_Click" Margin="0,0,10,0" Padding="20,5"/>
+                                    <Button x:Name="ClearDatabaseButton" Content="Clear Database" Click="ClearDatabaseButton_Click" Padding="20,5"/>
+                                </StackPanel>
+                                <TextBlock x:Name="TestDataStatusTextBlock" Text="" Margin="0,0,0,10"/>
+                            </StackPanel>
+                        </GroupBox>
+                        
+                        <!-- Performance Metrics -->
+                        <GroupBox Header="System Performance Metrics" Margin="0,0,0,20">
+                            <StackPanel Margin="10">
+                                <!-- Database Performance -->
+                                <Expander Header="Database Performance" Margin="0,0,0,10">
+                                    <Grid Margin="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <Label Grid.Row="0" Grid.Column="0" Content="Average Load Time:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="AvgLoadTimeText" Grid.Row="0" Grid.Column="1" Text="0 ms" Margin="10,0"/>
+                                        <Label Grid.Row="0" Grid.Column="2" Content="Load Count:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="LoadCountText" Grid.Row="0" Grid.Column="3" Text="0" Margin="10,0"/>
+                                        
+                                        <Label Grid.Row="1" Grid.Column="0" Content="Average Filter Time:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="AvgFilterTimeText" Grid.Row="1" Grid.Column="1" Text="0 ms" Margin="10,0"/>
+                                        <Label Grid.Row="1" Grid.Column="2" Content="Filter Count:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="FilterCountText" Grid.Row="1" Grid.Column="3" Text="0" Margin="10,0"/>
+                                        
+                                        <Label Grid.Row="2" Grid.Column="0" Content="Total Personnel:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="TotalPersonnelText" Grid.Row="2" Grid.Column="1" Text="0" Margin="10,0"/>
+                                        <Label Grid.Row="2" Grid.Column="2" Content="Total Qualifications:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="TotalQualificationsText" Grid.Row="2" Grid.Column="3" Text="0" Margin="10,0"/>
+                                    </Grid>
+                                </Expander>
+                                
+                                <!-- Cache Performance -->
+                                <Expander Header="Cache Performance" Margin="0,0,0,10">
+                                    <Grid Margin="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <Label Grid.Row="0" Grid.Column="0" Content="Cache Size:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="CacheSizeText" Grid.Row="0" Grid.Column="1" Text="0 entries" Margin="10,0"/>
+                                        <Label Grid.Row="0" Grid.Column="2" Content="Expired Entries:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="ExpiredEntriesText" Grid.Row="0" Grid.Column="3" Text="0" Margin="10,0"/>
+                                        
+                                        <Label Grid.Row="1" Grid.Column="0" Content="Cache Hit Rate:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="CacheHitRateText" Grid.Row="1" Grid.Column="1" Text="0%" Margin="10,0"/>
+                                        <Button Grid.Row="1" Grid.Column="2" Content="Clear Cache" Click="ClearCache_Click" Margin="10,0" Padding="10,5"/>
+                                    </Grid>
+                                </Expander>
+                                
+                                <!-- System Status -->
+                                <Expander Header="System Status" Margin="0,0,0,10">
+                                    <Grid Margin="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <Label Grid.Row="0" Grid.Column="0" Content="Database Status:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="DatabaseStatusText" Grid.Row="0" Grid.Column="1" Text="Connected" Margin="10,0" Foreground="Green"/>
+                                        <Label Grid.Row="0" Grid.Column="2" Content="Last Backup:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="LastBackupText" Grid.Row="0" Grid.Column="3" Text="Never" Margin="10,0"/>
+                                        
+                                        <Label Grid.Row="1" Grid.Column="0" Content="System Uptime:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="SystemUptimeText" Grid.Row="1" Grid.Column="1" Text="0 days, 0 hours" Margin="10,0"/>
+                                        <Label Grid.Row="1" Grid.Column="2" Content="Memory Usage:" FontWeight="Bold"/>
+                                        <TextBlock x:Name="MemoryUsageText" Grid.Row="1" Grid.Column="3" Text="0 MB" Margin="10,0"/>
+                                    </Grid>
+                                </Expander>
+                                
+                                <!-- Action Buttons -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                                    <Button Content="Export Performance Report" Click="ExportPerformanceReport_Click" Margin="5" Padding="15,5"/>
+                                    <Button Content="Reset Performance Counters" Click="ResetPerformanceCounters_Click" Margin="5" Padding="15,5"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

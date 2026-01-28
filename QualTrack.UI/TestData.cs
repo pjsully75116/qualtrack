@@ -22,6 +22,7 @@ namespace QualTrack.UI
             var qualificationRepo = new QualificationRepository();
             var qualificationService = new QualificationService();
             var additionalRequirementsRepo = new AdditionalRequirementsRepository(dbContext);
+            var aaeFormRepo = new AAEScreeningFormRepository();
 
             // Check if database already has data
             var existingPersonnel = await personnelRepo.GetAllPersonnelAsync(dbContext);
@@ -35,26 +36,42 @@ namespace QualTrack.UI
             var oneWeekAgo = today.AddDays(-7);
             var rand = new Random();
 
-            // Define all weapon systems
-            var weapons = new[] { "M9", "M4/M16", "M500", "M240", "M2" };
+            // Define all weapon systems (representative shipboard sample)
+            var weapons = new[] { "M9", "M4/M16", "M500", "M240", "M2", "M2A1" };
 
-            // Create 21 sailors with specific names
-            for (int i = 1; i <= 21; i++)
+            // Define name pools for random sailors
+            string[] firstNames =
+            {
+                "Michael", "David", "John", "James", "Robert", "William", "Richard", "Joseph", "Thomas", "Christopher",
+                "Charles", "Daniel", "Matthew", "Anthony", "Mark", "Donald", "Steven", "Paul", "Andrew", "Joshua",
+                "Kevin", "Brian", "Eric", "Adam", "Justin", "Ryan", "Kyle", "Brandon", "Sean", "Jason",
+                "Nicholas", "Tyler", "Zachary", "Aaron", "Jeremy", "Jordan", "Austin", "Logan", "Ethan", "Noah",
+                "Samantha", "Jessica", "Emily", "Sarah", "Ashley", "Lauren", "Brittany", "Megan", "Rachel", "Kayla"
+            };
+            string[] lastNames =
+            {
+                "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez",
+                "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin",
+                "Lee", "Perez", "Thompson", "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson",
+                "Walker", "Young", "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill", "Flores",
+                "Green", "Adams", "Baker", "Nelson", "Carter", "Mitchell", "Perez", "Roberts", "Turner", "Phillips"
+            };
+            string[] rates = { "BM", "GM", "OS", "QM", "ET", "FC", "IT", "EN", "DC", "HM", "MA" };
+            string[] ranks = { "E-2", "E-3", "E-4", "E-5", "E-6", "E-7" };
+
+            var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // Create 50 sailors: keep Cole & Coen, plus 48 random
+            for (int i = 1; i <= 50; i++)
             {
                 string lastName, firstName, dodId, rate, rank;
                 List<(string, string)> dutySections;
-                
-                // Define arrays of common names
-                string[] firstNames = { "Michael", "David", "John", "James", "Robert", "William", "Richard", "Joseph", "Thomas", "Christopher", 
-                                       "Charles", "Daniel", "Matthew", "Anthony", "Mark", "Donald", "Steven", "Paul", "Andrew", "Joshua", "Kevin" };
-                string[] lastNames = { "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez",
-                                      "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee" };
-                
+
                 if (i == 1)
                 {
                     lastName = "Cole";
                     firstName = "Jermaine";
-                    dodId = $"0100000001"; // 10 digits
+                    dodId = "0100000001";
                     rate = "GM1";
                     rank = "E-6";
                     dutySections = new List<(string, string)> { ("3", "1"), ("6", "1") };
@@ -68,27 +85,26 @@ namespace QualTrack.UI
                     rank = "E-5";
                     dutySections = new List<(string, string)> { ("3", "2"), ("6", "2") };
                 }
-                else if (i == 21)
-                {
-                    lastName = "Harper";
-                    firstName = "Elise";
-                    dodId = "0100000021";
-                    rate = "ENS";
-                    rank = "O-1";
-                    dutySections = new List<(string, string)> { ("3", "1"), ("6", "1") };
-                }
                 else
                 {
-                    // Use unique common names for the remaining 18 sailors
-                    int nameIndex = i - 3; // Start from index 0 for the name arrays
-                    firstName = firstNames[nameIndex];
-                    lastName = lastNames[nameIndex];
-                    dodId = $"10000000{i:D2}";
-                    string[] ranks = { "E-1", "E-2", "E-3", "E-4", "E-5", "E-6", "E-7", "E-8", "E-9" };
-                    rank = ranks[(i - 1) % ranks.Length];
-                    string rateSuffix = ((i - 1) % 3 + 1).ToString();
-                    rate = $"GM{rateSuffix}";
-                    dutySections = new List<(string, string)> { ("3", ((i - 1) % 3 + 1).ToString()), ("6", ((i - 1) % 6 + 1).ToString()) };
+                    string nameKey;
+                    do
+                    {
+                        firstName = firstNames[rand.Next(firstNames.Length)];
+                        lastName = lastNames[rand.Next(lastNames.Length)];
+                        nameKey = $"{lastName},{firstName}";
+                    } while (usedNames.Contains(nameKey) || nameKey.Equals("Cole,Jermaine", StringComparison.OrdinalIgnoreCase)
+                             || nameKey.Equals("Coen,Patrick", StringComparison.OrdinalIgnoreCase));
+
+                    usedNames.Add(nameKey);
+                    dodId = $"010000{(i + 1000):D4}";
+                    rate = rates[rand.Next(rates.Length)] + rand.Next(1, 4);
+                    rank = ranks[rand.Next(ranks.Length)];
+                    dutySections = new List<(string, string)>
+                    {
+                        ("3", rand.Next(1, 4).ToString()),
+                        ("6", rand.Next(1, 7).ToString())
+                    };
                 }
 
                 var sailor = new Personnel(lastName, firstName, rate, rank)
@@ -103,9 +119,6 @@ namespace QualTrack.UI
             // Create qualifications with various statuses
             foreach (var (sailor, idx) in testSailors.Select((s, i) => (s, i)))
             {
-                if (idx == 20) // Harper, Elise: no weapons qual data
-                    continue;
-
                 List<string> sailorWeapons;
                 DateTime qualDate;
 
@@ -117,8 +130,8 @@ namespace QualTrack.UI
                 }
                 else
                 {
-                    // Each sailor gets 1-3 random weapons
-                    sailorWeapons = weapons.OrderBy(x => rand.Next()).Take(rand.Next(1, 4)).ToList();
+                    // Each sailor gets 1-4 random weapons
+                    sailorWeapons = weapons.OrderBy(x => rand.Next()).Take(rand.Next(1, 5)).ToList();
                     
                     // Create different qualification statuses
                     // 40% current, 30% sustainment due, 30% expired
@@ -217,77 +230,109 @@ namespace QualTrack.UI
                 };
 
                 // Special handling for Cole, Jermaine, Coen, Patrick, and Harper, Elise - fully qualified
-                if (idx == 0 || idx == 1 || idx == 20) // Cole, Jermaine (index 0), Coen, Patrick (index 1), and Harper, Elise (index 20)
+                DateTime? aaeCompletedDate = null;
+
+                if (idx == 0 || idx == 1) // Cole, Jermaine (index 0) and Coen, Patrick (index 1)
                 {
-                    if (idx == 20) // Harper, Elise: all admin documents valid as of today
-                    {
-                        adminRequirements.Form2760Date = today; // Today
-                        adminRequirements.Form2760Number = $"2760-{sailor.DODId}";
-                        adminRequirements.Form2760SignedDate = today;
-                        adminRequirements.Form2760Witness = "Chief Smith";
+                    adminRequirements.Form2760Date = today.AddDays(-30); // 30 days ago
+                    adminRequirements.Form2760Number = $"2760-{sailor.DODId}";
+                    adminRequirements.Form2760SignedDate = today.AddDays(-30);
+                    adminRequirements.Form2760Witness = "Chief Smith";
 
-                        adminRequirements.AAEScreeningDate = today; // Today
-                        adminRequirements.AAEScreeningLevel = "Secret";
-                        adminRequirements.AAEInvestigationType = "T5";
-                        adminRequirements.AAEInvestigationDate = today;
-                        adminRequirements.AAEInvestigationAgency = "DCSA";
+                    aaeCompletedDate = today.AddDays(-60); // 60 days ago
 
-                        adminRequirements.DeadlyForceTrainingDate = today; // Today
-                        adminRequirements.DeadlyForceInstructor = "Gunny Johnson";
-                        adminRequirements.DeadlyForceRemarks = "Quarterly training completed";
-                    }
-                    else // Cole, Jermaine and Coen, Patrick: existing logic
-                    {
-                        adminRequirements.Form2760Date = today.AddDays(-30); // 30 days ago
-                        adminRequirements.Form2760Number = $"2760-{sailor.DODId}";
-                        adminRequirements.Form2760SignedDate = today.AddDays(-30);
-                        adminRequirements.Form2760Witness = "Chief Smith";
-
-                        adminRequirements.AAEScreeningDate = today.AddDays(-60); // 60 days ago
-                        adminRequirements.AAEScreeningLevel = "Secret";
-                        adminRequirements.AAEInvestigationType = "T5";
-                        adminRequirements.AAEInvestigationDate = today.AddDays(-90);
-                        adminRequirements.AAEInvestigationAgency = "DCSA";
-
-                        adminRequirements.DeadlyForceTrainingDate = today.AddDays(-45); // 45 days ago
-                        adminRequirements.DeadlyForceInstructor = "Gunny Johnson";
-                        adminRequirements.DeadlyForceRemarks = "Quarterly training completed";
-                    }
+                    adminRequirements.DeadlyForceTrainingDate = today.AddDays(-45); // 45 days ago
+                    adminRequirements.DeadlyForceInstructor = "Gunny Johnson";
+                    adminRequirements.DeadlyForceRemarks = "Quarterly training completed";
                 }
                 else
                 {
-                    // Random admin requirements for other sailors
+                    // Majority current admin, some partial, some expired/missing
                     var adminRoll = rand.Next(100);
-                    
-                    if (adminRoll < 30) // 30% have Form 2760
+
+                    if (adminRoll < 70) // 70% fully current
                     {
-                        adminRequirements.Form2760Date = today.AddDays(-rand.Next(1, 365));
+                        adminRequirements.Form2760Date = today.AddDays(-rand.Next(1, 200));
                         adminRequirements.Form2760Number = $"2760-{sailor.DODId}";
-                        adminRequirements.Form2760SignedDate = today.AddDays(-rand.Next(1, 365));
+                        adminRequirements.Form2760SignedDate = adminRequirements.Form2760Date;
                         adminRequirements.Form2760Witness = "Chief Smith";
+
+                        aaeCompletedDate = today.AddDays(-rand.Next(1, 200));
+
+                        adminRequirements.DeadlyForceTrainingDate = today.AddDays(-rand.Next(1, 80));
+                        adminRequirements.DeadlyForceInstructor = "Gunny Johnson";
+                        adminRequirements.DeadlyForceRemarks = "Quarterly training completed";
                     }
-                    
-                    if (adminRoll < 25) // 25% have AA&E screening
+                    else if (adminRoll < 90) // 20% partial admin
                     {
-                        adminRequirements.AAEScreeningDate = today.AddDays(-rand.Next(1, 365));
-                        adminRequirements.AAEScreeningLevel = rand.Next(100) < 70 ? "Secret" : "Top Secret";
-                        adminRequirements.AAEInvestigationType = rand.Next(100) < 80 ? "T5" : "SSBI";
-                        adminRequirements.AAEInvestigationDate = today.AddDays(-rand.Next(1, 365));
-                        adminRequirements.AAEInvestigationAgency = "DCSA";
+                        if (rand.Next(100) < 70)
+                        {
+                            adminRequirements.Form2760Date = today.AddDays(-rand.Next(1, 365));
+                            adminRequirements.Form2760Number = $"2760-{sailor.DODId}";
+                            adminRequirements.Form2760SignedDate = adminRequirements.Form2760Date;
+                            adminRequirements.Form2760Witness = "Chief Smith";
+                        }
+                        if (rand.Next(100) < 50)
+                        {
+                            aaeCompletedDate = today.AddDays(-rand.Next(1, 365));
+                        }
+                        if (rand.Next(100) < 50)
+                        {
+                            adminRequirements.DeadlyForceTrainingDate = today.AddDays(-rand.Next(1, 120));
+                            adminRequirements.DeadlyForceInstructor = "Gunny Johnson";
+                            adminRequirements.DeadlyForceRemarks = "Quarterly training completed";
+                        }
                     }
-                    
-                    if (adminRoll < 40) // 40% have Deadly Force Training
+                    else // 10% expired
                     {
-                        adminRequirements.DeadlyForceTrainingDate = today.AddDays(-rand.Next(1, 90)); // Within 90 days
+                        adminRequirements.Form2760Date = today.AddDays(-rand.Next(370, 600));
+                        adminRequirements.Form2760Number = $"2760-{sailor.DODId}";
+                        adminRequirements.Form2760SignedDate = adminRequirements.Form2760Date;
+                        adminRequirements.Form2760Witness = "Chief Smith";
+
+                        aaeCompletedDate = today.AddDays(-rand.Next(370, 600));
+
+                        adminRequirements.DeadlyForceTrainingDate = today.AddDays(-rand.Next(120, 200));
                         adminRequirements.DeadlyForceInstructor = "Gunny Johnson";
                         adminRequirements.DeadlyForceRemarks = "Quarterly training completed";
                     }
                 }
 
                 // Save admin requirements if any exist
-                if (adminRequirements.Form2760Date.HasValue || adminRequirements.AAEScreeningDate.HasValue || adminRequirements.DeadlyForceTrainingDate.HasValue)
+                if (adminRequirements.Form2760Date.HasValue || adminRequirements.DeadlyForceTrainingDate.HasValue)
                 {
                     await additionalRequirementsRepo.SaveAsync(sailor.Id, adminRequirements);
+                }
+
+                if (aaeCompletedDate.HasValue)
+                {
+                    var completedDate = aaeCompletedDate.Value.Date;
+                    var aaeForm = new AAEScreeningForm
+                    {
+                        PersonnelId = sailor.Id,
+                        DateCompleted = completedDate,
+                        DateExpires = completedDate.AddYears(1),
+                        DateCreated = today,
+                        NameScreened = $"{sailor.LastName}, {sailor.FirstName}",
+                        RankScreened = sailor.Rank,
+                        DODIDScreened = sailor.DODId,
+                        NameScreener = "Cole",
+                        RankScreener = "E-6",
+                        DODIDScreener = "0100000001",
+                        Question1Response = "N",
+                        Question2Response = "N",
+                        Question3Response = "N",
+                        Question4Response = "N",
+                        Question5Response = "N",
+                        Question6Response = "N",
+                        Question7Response = "N",
+                        Qualified = true,
+                        Unqualified = false,
+                        ReviewLater = false,
+                        IsValid = true
+                    };
+
+                    await aaeFormRepo.AddAsync(dbContext, aaeForm);
                 }
             }
         }

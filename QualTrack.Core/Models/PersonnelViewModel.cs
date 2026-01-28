@@ -40,6 +40,13 @@ namespace QualTrack.Core.Models
         public string M2Qualified => HasQualification("M2") ? "X" : "";
         public string M2A1Qualified => HasQualification("M2A1") ? "X" : "";
         public string FiftyCalQualified => HasQualification("M2") || HasQualification("M2A1") ? "X" : "";
+        public bool M9AdminBlocked => IsWeaponQualified("M9") && !IsAdminCurrent();
+        public bool M4M16AdminBlocked => IsWeaponQualified("M4/M16") && !IsAdminCurrent();
+        public bool M500AdminBlocked => IsWeaponQualified("M500") && !IsAdminCurrent();
+        public bool M240AdminBlocked => IsWeaponQualified("M240") && !IsAdminCurrent();
+        public bool M2AdminBlocked => IsWeaponQualified("M2") && !IsAdminCurrent();
+        public bool M2A1AdminBlocked => IsWeaponQualified("M2A1") && !IsAdminCurrent();
+        public bool FiftyCalAdminBlocked => (IsWeaponQualified("M2") || IsWeaponQualified("M2A1")) && !IsAdminCurrent();
 
         // Duty section properties for dashboard columns
         public string DutySection3Display => GetDutySectionDisplay("3");
@@ -150,6 +157,21 @@ namespace QualTrack.Core.Models
             return Qualifications.Any(q => q.Weapon == weapon && q.Status?.IsQualified == true);
         }
 
+        private bool IsWeaponQualified(string weapon)
+        {
+            return Qualifications.Any(q => q.Weapon == weapon && q.Status?.IsQualified == true);
+        }
+
+        private bool IsAdminCurrent()
+        {
+            if (AdminRequirements == null)
+            {
+                return false;
+            }
+
+            return IsForm2760Valid() && IsAAEScreeningValid() && IsDeadlyForceTrainingValid();
+        }
+
         private string GetDutySectionDisplay(string dutySectionType)
         {
             var sections = DutySections.Where(ds => ds.Type == dutySectionType).Select(ds => ds.Section).ToList();
@@ -222,7 +244,7 @@ namespace QualTrack.Core.Models
             else if (expirationDate <= today.AddDays(30))
                 return "Expires Soon";
             else
-                return "Valid";
+                return "✓";
         }
 
         private Brush GetDD2760Color()
@@ -306,7 +328,7 @@ namespace QualTrack.Core.Models
             else if (expirationDate <= today.AddDays(30))
                 return "Expires Soon";
             else
-                return "Valid";
+                return "✓";
         }
 
         private string GetDeadlyForceTrainingStatus()
@@ -368,7 +390,7 @@ namespace QualTrack.Core.Models
                     return Brushes.LightGreen;
             }
             else
-                return Brushes.Orange; // Expired
+                return Brushes.Red; // Expired
         }
 
         private Brush GetDeadlyForceTrainingColor()

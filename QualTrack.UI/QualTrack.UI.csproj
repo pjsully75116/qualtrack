@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,6 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="itext7" Version="9.5.0" />
+    <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.5.0" />
     <PackageReference Include="Tesseract" Version="5.2.0" />
     <PackageReference Include="Tesseract.Drawing" Version="5.2.0" />
     <PackageReference Include="PdfSharpCore" Version="1.3.0" />
@@ -30,6 +33,13 @@
   <ItemGroup>
     <Content Include="tessdata\eng.traineddata" />
     <Content Include="tessdata\osd.traineddata" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\Deadly Force Memo Qualtrack.pdf">
+      <Link>Deadly Force Memo Qualtrack.pdf</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project> 

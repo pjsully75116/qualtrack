@@ -36,6 +36,8 @@ namespace QualTrack.UI
         private string _selectedWeapon = "All";
         private string _selectedStatus = "All";
         private DashboardColumnSettings _dashboardSettings = new DashboardColumnSettings();
+        private readonly IRbacService _rbacService = new RbacService();
+        private readonly ICurrentUserContext _currentUserContext = new LocalUserContext();
         
         // Performance optimization: Cache all personnel data
         private List<PersonnelViewModel> _allPersonnelCache = new List<PersonnelViewModel>();
@@ -75,6 +77,66 @@ namespace QualTrack.UI
             
             // Load initial data after UI is loaded
             Loaded += MainWindow_Loaded;
+
+            UpdateRoleMenuChecks();
+            ApplyRbacToUi();
+        }
+
+        private void RoleMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is string roleTag
+                && Enum.TryParse(roleTag, out RbacRole role))
+            {
+                _currentUserContext.Role = role;
+                UpdateRoleMenuChecks();
+                ApplyRbacToUi();
+            }
+        }
+
+        private void UpdateRoleMenuChecks()
+        {
+            foreach (var roleMenuItem in GetRoleMenuItems())
+            {
+                roleMenuItem.IsChecked = roleMenuItem.Tag?.ToString() == _currentUserContext.Role.ToString();
+            }
+        }
+
+        private IEnumerable<MenuItem> GetRoleMenuItems()
+        {
+            if (RoleMenu != null)
+            {
+                foreach (var child in RoleMenu.Items.OfType<MenuItem>())
+                {
+                    yield return child;
+                }
+            }
+        }
+
+        private void ApplyRbacToUi()
+        {
+            DashboardTab.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ViewDashboard);
+            AddAdminTab.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageAdminForms);
+            DigitalEntryTab.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageQualifications);
+            CrewServedTab.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageCrewServed);
+            SupportTab.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ViewDashboard);
+
+            DashboardSetupButton.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ConfigureDashboard);
+            ExportQualificationsMenuItem.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageSystem);
+            LoadTestDataMenuItem.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageSystem);
+            AddPersonnelMenuItem.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManagePersonnel);
+            AddQualificationMenuItem.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageQualifications);
+        }
+
+        private bool RequirePermission(RbacPermission permission, string action)
+        {
+            if (_rbacService.HasPermission(_currentUserContext.Role, permission))
+            {
+                return true;
+            }
+
+            MessageBox.Show($"Access denied for action: {action}. Current role: {_currentUserContext.Role}.",
+                "Access Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
         }
 
         private async void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -422,6 +484,11 @@ namespace QualTrack.UI
 
         private void DashboardSetup_Click(object sender, RoutedEventArgs e)
         {
+            if (!RequirePermission(RbacPermission.ConfigureDashboard, "Configure Dashboard"))
+            {
+                return;
+            }
+
             var setupWindow = new DashboardSetupWindow(_dashboardSettings);
             setupWindow.Owner = this;
             
@@ -434,6 +501,11 @@ namespace QualTrack.UI
 
         private void PersonnelDataGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
+            if (!RequirePermission(RbacPermission.ViewTrainingJacket, "View Training Jacket"))
+            {
+                return;
+            }
+
             var selectedPersonnel = PersonnelDataGrid.SelectedItem as PersonnelViewModel;
             if (selectedPersonnel != null)
             {
@@ -488,6 +560,11 @@ namespace QualTrack.UI
 
         private void AddPersonnel_Click(object sender, RoutedEventArgs e)
         {
+            if (!RequirePermission(RbacPermission.ManagePersonnel, "Add Personnel"))
+            {
+                return;
+            }
+
             // For now, just show a message - could be expanded to a separate window
             MessageBox.Show("Use the 'Add Qualification' tab to add personnel. Personnel will be created automatically when adding qualifications.", 
                 "Add Personnel", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -501,6 +578,11 @@ namespace QualTrack.UI
 
         private void AddQualification_Click(object sender, RoutedEventArgs e)
         {
+            if (!RequirePermission(RbacPermission.ManageQualifications, "Add Qualification"))
+            {
+                return;
+            }
+
             // Switch to add qualification tab
             MainTabControl.SelectedIndex = 1;
         }
@@ -646,6 +728,13 @@ namespace QualTrack.UI
                 {
                     var pdfService = new DD2760PdfGenerationService();
                     var pdfPath = pdfService.GenerateDD2760Pdf(dd2760Form, personnelForPdf);
+
+                    var signerName = $"{AdminLastNameTextBox.Text}, {AdminFirstNameTextBox.Text}".Trim(' ', ',');
+                    var signedPath = await TrySignPdfWithCacAsync(pdfPath, "DD2760 Admin Form", signerName);
+                    if (!string.IsNullOrWhiteSpace(signedPath))
+                    {
+                        pdfPath = signedPath;
+                    }
                     
                     // Update the form with PDF path
                     dd2760Form.PdfFilePath = pdfPath;
@@ -1043,14 +1132,7 @@ namespace QualTrack.UI
 
                 var aaeFormId = await aaeRepo.AddAsync(dbContext, aaeForm);
                 aaeForm.Id = aaeFormId;
-
-                // Update admin requirements
-                var adminRequirements = new AdditionalRequirements
-                {
-                    PersonnelId = personnelId,
-                    AAEScreeningDate = completionDate
-                };
-                var success = await additionalRequirementsRepo.SaveAsync(personnelId, adminRequirements);
+                var success = aaeFormId > 0;
 
                 // Generate PDF
                 bool pdfGenerated = false;
@@ -1066,6 +1148,12 @@ namespace QualTrack.UI
                         throw new FileNotFoundException($"PDF file was not created at: {pdfPath}");
                     }
                     
+                    var signedPath = await TrySignPdfWithCacAsync(pdfPath, "AA&E Screening Form", AAENameScreenerTextBox.Text);
+                    if (!string.IsNullOrWhiteSpace(signedPath))
+                    {
+                        pdfPath = signedPath;
+                    }
+
                     // Update the form with PDF path
                     aaeForm.PdfFilePath = pdfPath;
                     aaeForm.PdfFileName = Path.GetFileName(pdfPath);
@@ -1234,6 +1322,16 @@ namespace QualTrack.UI
                     return;
                 }
 
+                if (string.IsNullOrWhiteSpace(DeadlyForceTraineeSignatureTextBox.Text) ||
+                    !DeadlyForceTraineeDatePicker.SelectedDate.HasValue ||
+                    string.IsNullOrWhiteSpace(DeadlyForceObserverSignatureTextBox.Text) ||
+                    !DeadlyForceObserverDatePicker.SelectedDate.HasValue)
+                {
+                    AdminStatusTextBlock.Text = "Please complete trainee and observer signature/date fields.";
+                    AdminStatusTextBlock.Foreground = Brushes.Red;
+                    return;
+                }
+
                 using var dbContext = new DatabaseContext();
                 dbContext.InitializeDatabase();
                 
@@ -1273,20 +1371,51 @@ namespace QualTrack.UI
                 // Save admin requirements
                 var success = await additionalRequirementsRepo.SaveAsync(personnelId, adminRequirements);
 
-                if (success)
-                {
-                    AdminStatusTextBlock.Text = "Deadly Force Training submitted successfully!";
-                    AdminStatusTextBlock.Foreground = Brushes.Green;
-                    
-                    // Refresh dashboard data
-                    await LoadData();
-                    ApplyFilters();
-                }
-                else
+                if (!success)
                 {
                     AdminStatusTextBlock.Text = "Failed to save Deadly Force Training.";
                     AdminStatusTextBlock.Foreground = Brushes.Red;
+                    return;
                 }
+
+                // Generate PDF
+                try
+                {
+                    var pdfService = new DeadlyForcePdfGenerationService();
+                    var pdfPath = pdfService.GenerateDeadlyForcePdf(
+                        DeadlyForceTraineeSignatureTextBox.Text.Trim(),
+                        DeadlyForceTraineeDatePicker.SelectedDate.Value,
+                        DeadlyForceObserverSignatureTextBox.Text.Trim(),
+                        DeadlyForceObserverDatePicker.SelectedDate.Value);
+
+                    var signedPath = await TrySignPdfWithCacAsync(pdfPath, "Deadly Force Training", DeadlyForceObserverSignatureTextBox.Text.Trim());
+                    if (!string.IsNullOrWhiteSpace(signedPath))
+                    {
+                        pdfPath = signedPath;
+                    }
+
+                    var document = await _documentService.SaveDocumentAsync(pdfPath, DocumentTypes.DeadlyForceTraining, personnelId);
+                    await _documentRepository.AddDocumentAsync(document);
+
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = pdfPath,
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception pdfEx)
+                {
+                    AdminStatusTextBlock.Text = $"Training saved but PDF generation failed: {pdfEx.Message}";
+                    AdminStatusTextBlock.Foreground = Brushes.Orange;
+                    return;
+                }
+
+                AdminStatusTextBlock.Text = "Deadly Force Training submitted and PDF generated successfully!";
+                AdminStatusTextBlock.Foreground = Brushes.Green;
+                
+                // Refresh dashboard data
+                await LoadData();
+                ApplyFilters();
             }
             catch (Exception ex)
             {
@@ -1468,6 +1597,9 @@ namespace QualTrack.UI
             // Clear search fields
             SearchLastNameTextBox.Clear();
             SearchResultTextBlock.Text = "";
+            AdminSearchResultsComboBox.ItemsSource = null;
+            AdminSearchResultsComboBox.SelectedIndex = -1;
+            AdminSearchResultsComboBox.Visibility = Visibility.Collapsed;
             
             // Clear sailor information
             AdminLastNameTextBox.Clear();
@@ -1595,6 +1727,9 @@ namespace QualTrack.UI
                 var matchingPersonnel = allPersonnel.Where(p => 
                     p.LastName.Equals(lastName, StringComparison.OrdinalIgnoreCase)).ToList();
 
+                AdminSearchResultsComboBox.Visibility = Visibility.Collapsed;
+                AdminSearchResultsComboBox.ItemsSource = null;
+
                 if (matchingPersonnel.Count == 0)
                 {
                     SearchResultTextBlock.Text = $"No sailors found with last name '{lastName}'";
@@ -1610,15 +1745,27 @@ namespace QualTrack.UI
                 }
                 else
                 {
-                    // Multiple matches - show a selection dialog or just use the first one
-                    var sailor = matchingPersonnel.First();
-                    PopulateAdminFormFromSailor(sailor);
-                    SearchResultTextBlock.Text = $"Found {matchingPersonnel.Count} matches. Using: {sailor.FirstName} {sailor.LastName} ({sailor.Rate})";
+                    var matches = matchingPersonnel
+                        .Select(p => new SailorDisplayModel(p.Id, p.LastName, p.FirstName, p.DODId, p.Rank, p.Rate))
+                        .ToList();
+                    AdminSearchResultsComboBox.ItemsSource = matches;
+                    AdminSearchResultsComboBox.Visibility = Visibility.Visible;
+                    AdminSearchResultsComboBox.SelectedIndex = -1;
+                    SearchResultTextBlock.Text = $"Found {matchingPersonnel.Count} matches. Please select one.";
                 }
             }
             catch (Exception ex)
             {
                 SearchResultTextBlock.Text = $"Error searching: {ex.Message}";
+            }
+        }
+
+        private void AdminSearchResultsComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (AdminSearchResultsComboBox.SelectedItem is SailorDisplayModel selectedSailor)
+            {
+                PopulateAdminFormFromSailorDisplay(selectedSailor);
+                SearchResultTextBlock.Text = $"Selected: {selectedSailor.DisplayName}";
             }
         }
 
@@ -1651,8 +1798,47 @@ namespace QualTrack.UI
             }
         }
 
+        private void PopulateAdminFormFromSailorDisplay(SailorDisplayModel sailor)
+        {
+            AdminLastNameTextBox.Text = sailor.DisplayName.Split(',').FirstOrDefault()?.Trim() ?? "";
+            var nameParts = sailor.DisplayName.Split(',');
+            if (nameParts.Length > 1)
+            {
+                var firstPart = nameParts[1];
+                var firstName = firstPart.Split('(').FirstOrDefault()?.Trim() ?? "";
+                AdminFirstNameTextBox.Text = firstName;
+            }
+
+            AdminDODIdTextBox.Text = sailor.DODId;
+
+            for (int i = 0; i < AdminRateComboBox.Items.Count; i++)
+            {
+                var item = AdminRateComboBox.Items[i] as ComboBoxItem;
+                if (item?.Content.ToString() == sailor.RankRate.Split(' ').LastOrDefault())
+                {
+                    AdminRateComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+
+            for (int i = 0; i < AdminRankComboBox.Items.Count; i++)
+            {
+                var item = AdminRankComboBox.Items[i] as ComboBoxItem;
+                if (item?.Content.ToString() == sailor.RankRate.Split(' ').FirstOrDefault())
+                {
+                    AdminRankComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+
         private async void ExportQualifications_Click(object sender, RoutedEventArgs e)
         {
+            if (!RequirePermission(RbacPermission.ManageSystem, "Export Qualifications"))
+            {
+                return;
+            }
+
             try
             {
                 var saveFileDialog = new SaveFileDialog
@@ -1715,6 +1901,11 @@ namespace QualTrack.UI
 
         private async void LoadTestData_Click(object sender, RoutedEventArgs e)
         {
+            if (!RequirePermission(RbacPermission.ManageSystem, "Load Test Data"))
+            {
+                return;
+            }
+
             try
             {
                 await TestData.PopulateTestDataAsync();
@@ -1940,27 +2131,27 @@ namespace QualTrack.UI
             // Add weapon columns
             if (_dashboardSettings.ShowM9)
             {
-                PersonnelDataGrid.Columns.Add(CreateWeaponColumn("M9", "M9Qualified", "M9Color", 40));
+                PersonnelDataGrid.Columns.Add(CreateWeaponColumn("M9", "M9Qualified", "M9Color", "M9AdminBlocked", 40));
             }
 
             if (_dashboardSettings.ShowM4M16)
             {
-                PersonnelDataGrid.Columns.Add(CreateWeaponColumn("M4/M16", "M4M16Qualified", "M4M16Color", 60));
+                PersonnelDataGrid.Columns.Add(CreateWeaponColumn("M4/M16", "M4M16Qualified", "M4M16Color", "M4M16AdminBlocked", 60));
             }
 
             if (_dashboardSettings.ShowM500)
             {
-                PersonnelDataGrid.Columns.Add(CreateWeaponColumn("M500", "M500Qualified", "M500Color", 50));
+                PersonnelDataGrid.Columns.Add(CreateWeaponColumn("M500", "M500Qualified", "M500Color", "M500AdminBlocked", 50));
             }
 
             if (_dashboardSettings.ShowM240)
             {
-                PersonnelDataGrid.Columns.Add(CreateWeaponColumn("M240", "M240Qualified", "M240Color", 50));
+                PersonnelDataGrid.Columns.Add(CreateWeaponColumn("M240", "M240Qualified", "M240Color", "M240AdminBlocked", 50));
             }
 
             if (_dashboardSettings.ShowM2)
             {
-                PersonnelDataGrid.Columns.Add(CreateWeaponColumn(".50", "FiftyCalQualified", "FiftyCalColor", 40));
+                PersonnelDataGrid.Columns.Add(CreateWeaponColumn(".50", "FiftyCalQualified", "FiftyCalColor", "FiftyCalAdminBlocked", 40));
             }
 
             if (_dashboardSettings.ShowDateQualified)
@@ -2005,14 +2196,16 @@ namespace QualTrack.UI
             }
         }
 
-        private DataGridTemplateColumn CreateWeaponColumn(string header, string bindingPath, string colorBindingPath, int width)
+        private DataGridTemplateColumn CreateWeaponColumn(string header, string bindingPath, string colorBindingPath, string adminBlockBindingPath, int width)
         {
             var column = new DataGridTemplateColumn { Header = header, Width = width };
             
             // Create the cell template
             var template = new System.Windows.DataTemplate();
+            var grid = new System.Windows.FrameworkElementFactory(typeof(System.Windows.Controls.Grid));
             var border = new System.Windows.FrameworkElementFactory(typeof(System.Windows.Controls.Border));
             var textBlock = new System.Windows.FrameworkElementFactory(typeof(System.Windows.Controls.TextBlock));
+            var overlayText = new System.Windows.FrameworkElementFactory(typeof(System.Windows.Controls.TextBlock));
             
             // Set up the text block
             textBlock.SetBinding(System.Windows.Controls.TextBlock.TextProperty, new System.Windows.Data.Binding(bindingPath));
@@ -2028,7 +2221,23 @@ namespace QualTrack.UI
             
             // Add text block to border
             border.AppendChild(textBlock);
-            template.VisualTree = border;
+
+            // Red X overlay when admin is not current
+            overlayText.SetValue(System.Windows.Controls.TextBlock.TextProperty, "X");
+            overlayText.SetValue(System.Windows.Controls.TextBlock.ForegroundProperty, System.Windows.Media.Brushes.Red);
+            overlayText.SetValue(System.Windows.Controls.TextBlock.FontWeightProperty, System.Windows.FontWeights.Bold);
+            overlayText.SetValue(System.Windows.Controls.TextBlock.FontSizeProperty, 14.0);
+            overlayText.SetValue(System.Windows.Controls.TextBlock.HorizontalAlignmentProperty, System.Windows.HorizontalAlignment.Center);
+            overlayText.SetValue(System.Windows.Controls.TextBlock.VerticalAlignmentProperty, System.Windows.VerticalAlignment.Center);
+            overlayText.SetBinding(System.Windows.Controls.TextBlock.VisibilityProperty,
+                new System.Windows.Data.Binding(adminBlockBindingPath)
+                {
+                    Converter = new System.Windows.Controls.BooleanToVisibilityConverter()
+                });
+
+            grid.AppendChild(border);
+            grid.AppendChild(overlayText);
+            template.VisualTree = grid;
             
             column.CellTemplate = template;
             return column;
@@ -2379,6 +2588,11 @@ END OF REPORT";
 
         private async void DE_SaveForm_Click(object sender, RoutedEventArgs e)
         {
+            if (!RequirePermission(RbacPermission.ManageQualifications, "Save 3591/1 Qualification"))
+            {
+                return;
+            }
+
             DatabaseContext dbContext = null;
             try
             {
@@ -2415,6 +2629,12 @@ END OF REPORT";
                     
                     if (!string.IsNullOrWhiteSpace(pdfPath))
                     {
+                        var signedPath = await TrySignPdfWithCacAsync(pdfPath, "3591/1 Qualification", session.RsoSignature ?? string.Empty);
+                        if (!string.IsNullOrWhiteSpace(signedPath))
+                        {
+                            pdfPath = signedPath;
+                        }
+
                         session.PdfFilePath = pdfPath;
                         await sessionRepo.UpdateSessionPdfFilePathAsync(dbContext, sessionId, pdfPath);
                     }
@@ -2622,7 +2842,7 @@ END OF REPORT";
             }
         }
 
-        private async Task<string> Generate3591PdfForSession(QualificationSession session, List<SailorQualification> sailors)
+        private Task<string> Generate3591PdfForSession(QualificationSession session, List<SailorQualification> sailors)
         {
             try
             {
@@ -2752,7 +2972,7 @@ END OF REPORT";
                 stamper.Close();
                 reader.Close();
 
-                return outputPath;
+                return Task.FromResult(outputPath);
             }
             catch (Exception ex)
             {
@@ -3250,78 +3470,6 @@ END OF REPORT";
             return assessments;
         }
 
-        // Missing event handlers for DD2760 form
-        private void AdminFormType_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Handle admin form type selection change
-            if (AdminFormTypeComboBox.SelectedItem is ComboBoxItem selectedItem)
-            {
-                string tag = selectedItem.Tag?.ToString();
-                
-                // Hide all form grids first
-                DD2760FormGrid.Visibility = Visibility.Collapsed;
-                DD2760PlaceholderGroupBox.Visibility = Visibility.Collapsed;
-                
-                // Show appropriate form based on selection
-                switch (tag)
-                {
-                    case "DD2760":
-                        DD2760PlaceholderGroupBox.Visibility = Visibility.Visible;
-                        AdminFormDescriptionText.Text = "DD2760 - Ammunition and Explosives Safety Qualification form. This form is required annually for personnel handling ammunition and explosives.";
-                        break;
-                    case "AAE":
-                        AdminFormDescriptionText.Text = "AA&E Screening form - Coming soon...";
-                        break;
-                    case "DeadlyForce":
-                        AdminFormDescriptionText.Text = "Deadly Force Training form - Coming soon...";
-                        break;
-                    default:
-                        AdminFormDescriptionText.Text = "Select a form type to begin...";
-                        break;
-                }
-            }
-        }
-
-        private void DD2760Personnel_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Handle DD2760 personnel selection change
-        }
-
-        private void DD2760RefreshPersonnel_Click(object sender, RoutedEventArgs e)
-        {
-            // Handle DD2760 refresh personnel button click
-        }
-
-        private void DD2760CompletionDate_Changed(object sender, SelectionChangedEventArgs e)
-        {
-            // Handle DD2760 completion date change
-        }
-
-        private void DD2760DomesticViolence_Changed(object sender, RoutedEventArgs e)
-        {
-            // Handle DD2760 domestic violence change
-        }
-
-        private void DD2760GeneratePdf_Click(object sender, RoutedEventArgs e)
-        {
-            // Handle DD2760 generate PDF button click
-        }
-
-        private void DD2760SaveForm_Click(object sender, RoutedEventArgs e)
-        {
-            // Handle DD2760 save form button click
-        }
-
-        private void DD2760ViewPdf_Click(object sender, RoutedEventArgs e)
-        {
-            // Handle DD2760 view PDF button click
-        }
-
-        private void DD2760ClearForm_Click(object sender, RoutedEventArgs e)
-        {
-            // Handle DD2760 clear form button click
-        }
-
         private void DE_ClearForm_Click(object sender, RoutedEventArgs e)
         {
             deSailorQualifications.Clear();
@@ -3397,16 +3545,23 @@ END OF REPORT";
             }
 
             var sailorModels = CSW_SailorSelectionComboBox.ItemsSource as IEnumerable<SailorDisplayModel>;
-            var match = sailorModels?.FirstOrDefault(sailor =>
-                sailor.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase));
+            var matches = sailorModels?
+                .Where(sailor => sailor.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .ToList() ?? new List<SailorDisplayModel>();
 
-            if (match != null)
+            if (matches.Count == 0)
             {
-                CSW_SailorSelectionComboBox.SelectedItem = match;
+                MessageBox.Show($"No sailor found matching '{query}'.", "Lookup", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else if (matches.Count == 1)
+            {
+                CSW_SailorSelectionComboBox.SelectedItem = matches[0];
             }
             else
             {
-                MessageBox.Show($"No sailor found matching '{query}'.", "Lookup", MessageBoxButton.OK, MessageBoxImage.Information);
+                CSW_SailorSelectionComboBox.SelectedItem = null;
+                CSW_SailorSelectionComboBox.IsDropDownOpen = true;
+                MessageBox.Show($"Found {matches.Count} matches. Please select the correct sailor from the list (DODID shown).", "Lookup", MessageBoxButton.OK, MessageBoxImage.Information);
             }
 
             e.Handled = true;
@@ -3472,6 +3627,11 @@ END OF REPORT";
 
         private async void CSW_SaveForm_Click(object sender, RoutedEventArgs e)
         {
+            if (!RequirePermission(RbacPermission.ManageCrewServed, "Save 3591/2 Crew Served"))
+            {
+                return;
+            }
+
             DatabaseContext? dbContext = null;
             try
             {
@@ -3484,7 +3644,9 @@ END OF REPORT";
                 var crewServedService = new CrewServedWeaponService(
                     _qualificationService,
                     new CrewServedWeaponSessionRepository(),
-                    qualRepo);
+                    qualRepo,
+                    _rbacService,
+                    _currentUserContext);
 
                 // Get selected weapon
                 string weapon = GetCSWWeaponsFiredFromCheckboxes();
@@ -3573,6 +3735,12 @@ END OF REPORT";
                             pdfPath = await Generate3591_2PdfForSession(session, cswEntries.ToList());
                             if (!string.IsNullOrWhiteSpace(pdfPath))
                             {
+                                var signedPath = await TrySignPdfWithCacAsync(pdfPath, "3591/2 Qualification", session.InstructorName ?? string.Empty);
+                                if (!string.IsNullOrWhiteSpace(signedPath))
+                                {
+                                    pdfPath = signedPath;
+                                }
+
                                 await sessionRepo.UpdateSessionPdfFilePathAsync(dbContext, sessionId, pdfPath);
                             }
                         }
@@ -3626,10 +3794,8 @@ END OF REPORT";
             }
         }
 
-        private async Task<string> Generate3591_2PdfForSession(CrewServedWeaponSession session, List<CrewServedWeaponEntry> entries)
+        private Task<string> Generate3591_2PdfForSession(CrewServedWeaponSession session, List<CrewServedWeaponEntry> entries)
         {
-            await Task.CompletedTask;
-
             var templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "3591_2QualTrack.pdf");
             var outputDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GeneratedForms");
 
@@ -3680,7 +3846,33 @@ END OF REPORT";
             };
 
             var pdfService = new CrewServedWeaponPdfGenerationService(templatePath, outputDir, fieldMap);
-            return pdfService.Generate3591_2Pdf(session, entries);
+            return Task.FromResult(pdfService.Generate3591_2Pdf(session, entries));
+        }
+
+        private async Task<string?> TrySignPdfWithCacAsync(string pdfPath, string purpose, string signerDisplayName, string? signatureFieldName = null)
+        {
+            var provider = new CacSignatureProvider();
+            if (!provider.IsAvailable)
+            {
+                return null;
+            }
+
+            var request = new SignatureRequest
+            {
+                DocumentPath = pdfPath,
+                Purpose = purpose,
+                SignerDisplayName = string.IsNullOrWhiteSpace(signerDisplayName) ? Environment.UserName : signerDisplayName,
+                SignatureFieldName = signatureFieldName
+            };
+
+            var result = await provider.RequestSignatureAsync(request);
+            if (!result.Success)
+            {
+                MessageBox.Show(result.Message, "CAC Signature", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return null;
+            }
+
+            return result.SignedDocumentPath;
         }
 
         private void CSW_OpenGeneratedForms_Click(object sender, RoutedEventArgs e)
