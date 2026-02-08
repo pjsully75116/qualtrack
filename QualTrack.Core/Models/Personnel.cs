@@ -29,6 +29,16 @@ namespace QualTrack.Core.Models
         /// </summary>
         public string AdminStatus { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Whether the member is designated as a SAMI.
+        /// </summary>
+        public bool IsSami { get; set; }
+
+        /// <summary>
+        /// Whether the member is designated as a CSWI.
+        /// </summary>
+        public bool IsCswi { get; set; }
+
         // Admin Requirements
         public AdditionalRequirements? AdminRequirements { get; set; }
 

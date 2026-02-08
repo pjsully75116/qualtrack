@@ -240,9 +240,9 @@ namespace QualTrack.Core.Models
             var expirationDate = DD2760ExpirationDate.Value.Date;
 
             if (expirationDate < today)
-                return "Expired";
+                return "X";
             else if (expirationDate <= today.AddDays(30))
-                return "Expires Soon";
+                return "X";
             else
                 return "✓";
         }
@@ -324,9 +324,9 @@ namespace QualTrack.Core.Models
             var expirationDate = AAEScreeningExpirationDate.Value.Date;
 
             if (expirationDate < today)
-                return "Expired";
+                return "X";
             else if (expirationDate <= today.AddDays(30))
-                return "Expires Soon";
+                return "X";
             else
                 return "✓";
         }

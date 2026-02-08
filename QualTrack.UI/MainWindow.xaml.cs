@@ -7,7 +7,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Win32;
 using QualTrack.Core.Models;
-using QualTrack.Core.Services;
 using QualTrack.Data.Database;
 using QualTrack.Data.Repositories;
 using QualTrack.Data.Services;
@@ -20,6 +19,7 @@ using System.Windows.Media;
 using QualTrack.UI;
 using QualTrack.UI.Models;
 using System.Text;
+using QualTrack.Core.Services;
 
 
 namespace QualTrack.UI
@@ -38,6 +38,220 @@ namespace QualTrack.UI
         private DashboardColumnSettings _dashboardSettings = new DashboardColumnSettings();
         private readonly IRbacService _rbacService = new RbacService();
         private readonly ICurrentUserContext _currentUserContext = new LocalUserContext();
+
+        private SailorDisplayModel? _samiCswiSelectedSailor;
+        private readonly ObservableCollection<Legacy3591Entry> _legacyEntries = new ObservableCollection<Legacy3591Entry>();
+        private readonly ObservableCollection<Legacy3591_2Entry> _legacyCswEntries = new ObservableCollection<Legacy3591_2Entry>();
+        private readonly ObservableCollection<SignatureInboxRow> _signatureInboxRows = new ObservableCollection<SignatureInboxRow>();
+        private readonly SignatureQueueRepository _signatureQueueRepository = new SignatureQueueRepository();
+        private readonly SignatureQueueService _signatureQueueService = new SignatureQueueService();
+
+        private sealed class Legacy3591Entry : System.ComponentModel.INotifyPropertyChanged
+        {
+            public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+            public int PersonnelId { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Rate { get; set; } = string.Empty;
+            private bool _m9;
+            private bool _m9Sustainment;
+            private bool _m4m16;
+            private bool _m4m16Sustainment;
+            private bool _m500;
+            private bool _m500Sustainment;
+
+            public bool M9
+            {
+                get => _m9;
+                set
+                {
+                    if (_m9 == value) return;
+                    _m9 = value;
+                    if (value) M9Sustainment = false;
+                    OnPropertyChanged(nameof(M9));
+                }
+            }
+
+            public bool M9Sustainment
+            {
+                get => _m9Sustainment;
+                set
+                {
+                    if (_m9Sustainment == value) return;
+                    _m9Sustainment = value;
+                    if (value) M9 = false;
+                    OnPropertyChanged(nameof(M9Sustainment));
+                }
+            }
+
+            public bool M4M16
+            {
+                get => _m4m16;
+                set
+                {
+                    if (_m4m16 == value) return;
+                    _m4m16 = value;
+                    if (value) M4M16Sustainment = false;
+                    OnPropertyChanged(nameof(M4M16));
+                }
+            }
+
+            public bool M4M16Sustainment
+            {
+                get => _m4m16Sustainment;
+                set
+                {
+                    if (_m4m16Sustainment == value) return;
+                    _m4m16Sustainment = value;
+                    if (value) M4M16 = false;
+                    OnPropertyChanged(nameof(M4M16Sustainment));
+                }
+            }
+
+            public bool M500
+            {
+                get => _m500;
+                set
+                {
+                    if (_m500 == value) return;
+                    _m500 = value;
+                    if (value) M500Sustainment = false;
+                    OnPropertyChanged(nameof(M500));
+                }
+            }
+
+            public bool M500Sustainment
+            {
+                get => _m500Sustainment;
+                set
+                {
+                    if (_m500Sustainment == value) return;
+                    _m500Sustainment = value;
+                    if (value) M500 = false;
+                    OnPropertyChanged(nameof(M500Sustainment));
+                }
+            }
+
+            private void OnPropertyChanged(string propertyName)
+            {
+                PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+        
+        private sealed class Legacy3591_2Entry : System.ComponentModel.INotifyPropertyChanged
+        {
+            public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+            public int PersonnelId { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Rate { get; set; } = string.Empty;
+            private bool _m240;
+            private bool _m240Sustainment;
+            private bool _m2a1;
+            private bool _m2a1Sustainment;
+
+            public bool M240
+            {
+                get => _m240;
+                set
+                {
+                    if (_m240 == value) return;
+                    _m240 = value;
+                    if (value) M240Sustainment = false;
+                    OnPropertyChanged(nameof(M240));
+                }
+            }
+
+            public bool M240Sustainment
+            {
+                get => _m240Sustainment;
+                set
+                {
+                    if (_m240Sustainment == value) return;
+                    _m240Sustainment = value;
+                    if (value) M240 = false;
+                    OnPropertyChanged(nameof(M240Sustainment));
+                }
+            }
+
+            public bool M2A1
+            {
+                get => _m2a1;
+                set
+                {
+                    if (_m2a1 == value) return;
+                    _m2a1 = value;
+                    if (value) M2A1Sustainment = false;
+                    OnPropertyChanged(nameof(M2A1));
+                }
+            }
+
+            public bool M2A1Sustainment
+            {
+                get => _m2a1Sustainment;
+                set
+                {
+                    if (_m2a1Sustainment == value) return;
+                    _m2a1Sustainment = value;
+                    if (value) M2A1 = false;
+                    OnPropertyChanged(nameof(M2A1Sustainment));
+                }
+            }
+
+            private void OnPropertyChanged(string propertyName)
+            {
+                PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+
+        private sealed class SignatureInboxRow
+        {
+            public int QueueId { get; set; }
+            public int? DocumentId { get; set; }
+            public int? PersonnelId { get; set; }
+            public string DocumentPath { get; set; } = string.Empty;
+            public string FormType { get; set; } = string.Empty;
+            public string FormTypeDisplay { get; set; } = string.Empty;
+            public string PersonnelDisplay { get; set; } = string.Empty;
+            public string CurrentRole { get; set; } = string.Empty;
+            public string Status { get; set; } = string.Empty;
+            public DateTime CreatedAt { get; set; }
+            public string CreatedAtDisplay { get; set; } = string.Empty;
+            public string RequiredRoles { get; set; } = string.Empty;
+            public string? CompletedRoles { get; set; }
+        }
+        private sealed class SamiCswiDashboardRow
+        {
+            public int PersonnelId { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Rate { get; set; } = string.Empty;
+            public string Sami { get; set; } = string.Empty;
+            public string Cswi { get; set; } = string.Empty;
+            public string DesignationStatus { get; set; } = string.Empty;
+            public Brush DesignationColor { get; set; } = Brushes.Transparent;
+            public string M9Qualified { get; set; } = string.Empty;
+            public Brush M9Color { get; set; } = Brushes.Transparent;
+            public bool M9AdminBlocked { get; set; }
+            public string M4M16Qualified { get; set; } = string.Empty;
+            public Brush M4M16Color { get; set; } = Brushes.Transparent;
+            public bool M4M16AdminBlocked { get; set; }
+            public string M500Qualified { get; set; } = string.Empty;
+            public Brush M500Color { get; set; } = Brushes.Transparent;
+            public bool M500AdminBlocked { get; set; }
+            public string M240Qualified { get; set; } = string.Empty;
+            public Brush M240Color { get; set; } = Brushes.Transparent;
+            public bool M240AdminBlocked { get; set; }
+            public string FiftyCalQualified { get; set; } = string.Empty;
+            public Brush FiftyCalColor { get; set; } = Brushes.Transparent;
+            public bool FiftyCalAdminBlocked { get; set; }
+        }
+
+        private sealed class InstructorQualificationRow
+        {
+            public string Date { get; set; } = string.Empty;
+            public string Type { get; set; } = string.Empty;
+            public string FileName { get; set; } = string.Empty;
+        }
         
         // Performance optimization: Cache all personnel data
         private List<PersonnelViewModel> _allPersonnelCache = new List<PersonnelViewModel>();
@@ -80,6 +294,16 @@ namespace QualTrack.UI
 
             UpdateRoleMenuChecks();
             ApplyRbacToUi();
+
+            if (SamiCswiRoleComboBox != null)
+            {
+                SamiCswiRoleComboBox.SelectedIndex = 0;
+            }
+
+            LegacySailorsDataGrid.ItemsSource = _legacyEntries;
+            LegacyCswSailorsDataGrid.ItemsSource = _legacyCswEntries;
+            SignatureInboxGrid.ItemsSource = _signatureInboxRows;
+            InitializeSignatureInboxFilters();
         }
 
         private void RoleMenuItem_Click(object sender, RoutedEventArgs e)
@@ -116,15 +340,24 @@ namespace QualTrack.UI
         {
             DashboardTab.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ViewDashboard);
             AddAdminTab.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageAdminForms);
+            SignatureInboxTab.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageAdminForms);
             DigitalEntryTab.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageQualifications);
             CrewServedTab.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageCrewServed);
             SupportTab.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ViewDashboard);
 
             DashboardSetupButton.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ConfigureDashboard);
+            ImportRosterMenuItem.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManagePersonnel);
             ExportQualificationsMenuItem.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageSystem);
             LoadTestDataMenuItem.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageSystem);
             AddPersonnelMenuItem.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManagePersonnel);
             AddQualificationMenuItem.IsEnabled = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageQualifications);
+
+            var canManageRoles = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageSystem);
+            SamiCswiManagementTab.IsEnabled = canManageRoles;
+            SamiCswiManagementTab.Visibility = canManageRoles ? Visibility.Visible : Visibility.Collapsed;
+
+            var canViewSignatureInbox = _rbacService.HasPermission(_currentUserContext.Role, RbacPermission.ManageAdminForms);
+            SignatureInboxTab.Visibility = canViewSignatureInbox ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private bool RequirePermission(RbacPermission permission, string action)
@@ -148,9 +381,13 @@ namespace QualTrack.UI
 
             if (MainTabControl.SelectedItem is TabItem selectedTab)
             {
-                if (selectedTab.Header?.ToString() == "3591/2 Digital Entry")
+                if (selectedTab.Header?.ToString() == "3591/2 Management")
                 {
                     await InitializeCrewServedWeaponTab();
+                }
+                else if (selectedTab.Header?.ToString() == "Signature Inbox")
+                {
+                    await LoadSignatureInboxAsync();
                 }
             }
         }
@@ -164,6 +401,7 @@ namespace QualTrack.UI
                 
                 // Load initial data
                 await LoadData();
+                await LoadSamiCswiDashboard();
                 ApplyColumnVisibility();
                 
                 // Initialize performance display first
@@ -570,6 +808,18 @@ namespace QualTrack.UI
                 "Add Personnel", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
+        private void ImportRoster_Click(object sender, RoutedEventArgs e)
+        {
+            if (!RequirePermission(RbacPermission.ManagePersonnel, "Import Roster"))
+            {
+                return;
+            }
+
+            var window = new ImportRosterWindow();
+            window.Owner = this;
+            window.ShowDialog();
+        }
+
         private void ViewPersonnel_Click(object sender, RoutedEventArgs e)
         {
             // Switch to dashboard tab
@@ -587,6 +837,626 @@ namespace QualTrack.UI
             MainTabControl.SelectedIndex = 1;
         }
 
+        private void LegacySelectPdfButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new OpenFileDialog
+            {
+                Filter = "PDF Files (*.pdf)|*.pdf|All Files (*.*)|*.*",
+                Title = "Select 3591/1 PDF"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                LegacyPdfPathTextBox.Text = dialog.FileName;
+            }
+        }
+
+        private void LegacyAddSailorButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (LegacySailorComboBox.SelectedItem is not SailorDisplayModel selectedSailor)
+            {
+                LegacyImportStatusTextBlock.Text = "Select a sailor before adding.";
+                LegacyImportStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            if (_legacyEntries.Any(e => e.PersonnelId == selectedSailor.Id))
+            {
+                LegacyImportStatusTextBlock.Text = "Sailor already added.";
+                LegacyImportStatusTextBlock.Foreground = Brushes.Gray;
+                return;
+            }
+
+            _legacyEntries.Add(new Legacy3591Entry
+            {
+                PersonnelId = selectedSailor.Id,
+                Name = selectedSailor.DisplayName,
+                Rate = selectedSailor.RankRate
+            });
+
+            LegacyImportStatusTextBlock.Text = string.Empty;
+        }
+
+        private async void LegacyImportButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!RequirePermission(RbacPermission.ManageQualifications, "Import Legacy 3591/1s"))
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(LegacyPdfPathTextBox.Text) || !File.Exists(LegacyPdfPathTextBox.Text))
+            {
+                LegacyImportStatusTextBlock.Text = "Select a valid 3591/1 PDF before importing.";
+                LegacyImportStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            if (!LegacyDatePicker.SelectedDate.HasValue)
+            {
+                LegacyImportStatusTextBlock.Text = "Select a qualification date before importing.";
+                LegacyImportStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            if (_legacyEntries.Count == 0)
+            {
+                LegacyImportStatusTextBlock.Text = "Add at least one sailor to import.";
+                LegacyImportStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            var hasWeaponSelection = _legacyEntries.Any(e =>
+                e.M9 || e.M4M16 || e.M500 || e.M9Sustainment || e.M4M16Sustainment || e.M500Sustainment);
+            if (!hasWeaponSelection)
+            {
+                LegacyImportStatusTextBlock.Text = "Select at least one weapon for the imported sailors.";
+                LegacyImportStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            try
+            {
+                using var dbContext = new DatabaseContext();
+                dbContext.InitializeDatabase();
+                var sessionRepo = new QualificationSessionRepository();
+                var qualificationRepo = new QualificationRepository();
+
+                var selectedWeapons = new List<string>();
+                if (_legacyEntries.Any(e => e.M9 || e.M9Sustainment)) selectedWeapons.Add("M9");
+                if (_legacyEntries.Any(e => e.M4M16 || e.M4M16Sustainment)) selectedWeapons.Add("M4/M16");
+                if (_legacyEntries.Any(e => e.M500 || e.M500Sustainment)) selectedWeapons.Add("M500");
+
+                var session = new QualificationSession
+                {
+                    ShipStation = "Legacy Import",
+                    DivisionActivity = "Legacy Import",
+                    WeaponsFired = string.Join(", ", selectedWeapons),
+                    RangeNameLocation = "Legacy Import",
+                    DateOfFiring = LegacyDatePicker.SelectedDate,
+                    PdfFilePath = LegacyPdfPathTextBox.Text
+                };
+
+                var sessionId = await sessionRepo.AddSessionAsync(dbContext, session);
+
+                var dateQualified = LegacyDatePicker.SelectedDate.Value.Date;
+                var added = 0;
+
+                foreach (var entry in _legacyEntries)
+                {
+                    if (entry.M9 || entry.M9Sustainment)
+                    {
+                        await qualificationRepo.AddQualificationAsync(dbContext, new Qualification
+                        {
+                            PersonnelId = entry.PersonnelId,
+                            Weapon = "M9",
+                            Category = 2,
+                            DateQualified = dateQualified,
+                            QualificationSessionId = sessionId,
+                            Details = entry.M9Sustainment ? new QualificationDetails
+                            {
+                                SustainmentDate = dateQualified
+                            } : null
+                        });
+                        added++;
+                    }
+                    if (entry.M4M16 || entry.M4M16Sustainment)
+                    {
+                        await qualificationRepo.AddQualificationAsync(dbContext, new Qualification
+                        {
+                            PersonnelId = entry.PersonnelId,
+                            Weapon = "M4/M16",
+                            Category = 2,
+                            DateQualified = dateQualified,
+                            QualificationSessionId = sessionId,
+                            Details = entry.M4M16Sustainment ? new QualificationDetails
+                            {
+                                SustainmentDate = dateQualified
+                            } : null
+                        });
+                        added++;
+                    }
+                    if (entry.M500 || entry.M500Sustainment)
+                    {
+                        await qualificationRepo.AddQualificationAsync(dbContext, new Qualification
+                        {
+                            PersonnelId = entry.PersonnelId,
+                            Weapon = "M500",
+                            Category = 2,
+                            DateQualified = dateQualified,
+                            QualificationSessionId = sessionId,
+                            Details = entry.M500Sustainment ? new QualificationDetails
+                            {
+                                SustainmentDate = dateQualified
+                            } : null
+                        });
+                        added++;
+                    }
+                }
+
+                _legacyEntries.Clear();
+                LegacyPdfPathTextBox.Clear();
+                LegacyDatePicker.SelectedDate = null;
+
+                LegacyImportStatusTextBlock.Text = $"Legacy import complete. Added {added} qualification(s).";
+                LegacyImportStatusTextBlock.Foreground = Brushes.Green;
+
+                await LoadData();
+                ApplyFilters();
+            }
+            catch (Exception ex)
+            {
+                LegacyImportStatusTextBlock.Text = $"Legacy import failed: {ex.Message}";
+                LegacyImportStatusTextBlock.Foreground = Brushes.Red;
+            }
+        }
+
+        private async void SignatureInboxRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            await LoadSignatureInboxAsync();
+        }
+
+        private async void SignatureInboxFilter_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            await LoadSignatureInboxAsync();
+        }
+
+        private async Task LoadSignatureInboxAsync()
+        {
+            try
+            {
+                using var dbContext = new DatabaseContext();
+                dbContext.InitializeDatabase();
+
+                var role = GetInboxRoleForCurrentUser();
+                var status = SignatureInboxStatusComboBox.SelectedItem?.ToString();
+                var formType = SignatureInboxFormComboBox.SelectedItem?.ToString();
+
+                var queueItems = await _signatureQueueRepository.GetInboxAsync(dbContext, role, status, formType);
+
+                var personnelRepo = new PersonnelRepository();
+                var allPersonnel = await personnelRepo.GetAllPersonnelAsync(dbContext);
+                var personnelMap = allPersonnel.ToDictionary(p => p.Id, p => $"{p.LastName}, {p.FirstName} ({p.Rank} {p.Rate})");
+
+                _signatureInboxRows.Clear();
+                foreach (var item in queueItems)
+                {
+                    var personnelDisplay = item.PersonnelId.HasValue && personnelMap.TryGetValue(item.PersonnelId.Value, out var display)
+                        ? display
+                        : "Unknown";
+
+                    _signatureInboxRows.Add(new SignatureInboxRow
+                    {
+                        QueueId = item.Id,
+                        DocumentId = item.DocumentId,
+                        PersonnelId = item.PersonnelId,
+                        DocumentPath = item.DocumentPath,
+                        FormType = item.FormType,
+                        FormTypeDisplay = DocumentTypes.GetDisplayName(item.FormType),
+                        PersonnelDisplay = personnelDisplay,
+                        CurrentRole = item.CurrentRole,
+                        Status = item.Status,
+                        CreatedAt = item.CreatedAt,
+                        CreatedAtDisplay = item.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                        RequiredRoles = item.RequiredRoles,
+                        CompletedRoles = item.CompletedRoles
+                    });
+                }
+
+                SignatureInboxStatusTextBlock.Text = $"{_signatureInboxRows.Count} item(s) loaded.";
+            }
+            catch (Exception ex)
+            {
+                SignatureInboxStatusTextBlock.Text = $"Failed to load inbox: {ex.Message}";
+                SignatureInboxStatusTextBlock.Foreground = Brushes.Red;
+            }
+        }
+
+        private string GetInboxRoleForCurrentUser()
+        {
+            return _currentUserContext.Role switch
+            {
+                RbacRole.Admin => "All",
+                RbacRole.Medical => "Medical",
+                RbacRole.AAandE => "AA&E",
+                _ => _currentUserContext.Role.ToString()
+            };
+        }
+
+        private void SignatureInboxOpenPdf_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is SignatureInboxRow row)
+            {
+                if (File.Exists(row.DocumentPath))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = row.DocumentPath,
+                        UseShellExecute = true
+                    });
+                }
+                else
+                {
+                    SignatureInboxStatusTextBlock.Text = "PDF file not found for this item.";
+                    SignatureInboxStatusTextBlock.Foreground = Brushes.Red;
+                }
+            }
+        }
+
+        private async void SignatureInboxSign_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.CommandParameter is not SignatureInboxRow row)
+            {
+                return;
+            }
+
+            await SignQueueItemAsync(row);
+        }
+
+        private async void SignatureInboxReturn_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.CommandParameter is not SignatureInboxRow row)
+            {
+                return;
+            }
+
+            try
+            {
+                using var dbContext = new DatabaseContext();
+                dbContext.InitializeDatabase();
+
+                var item = await _signatureQueueRepository.GetByIdAsync(dbContext, row.QueueId);
+                if (item == null)
+                {
+                    SignatureInboxStatusTextBlock.Text = "Queue item no longer exists.";
+                    SignatureInboxStatusTextBlock.Foreground = Brushes.Red;
+                    return;
+                }
+
+                var previousRole = _signatureQueueService.GetPreviousRole(item) ?? item.CurrentRole;
+                _signatureQueueService.ReturnToQueue(item, previousRole);
+                item.LastAction = $"Returned to {item.CurrentRole}";
+                await _signatureQueueRepository.UpdateAsync(dbContext, item);
+
+                SignatureInboxStatusTextBlock.Text = "Item returned to queue.";
+                SignatureInboxStatusTextBlock.Foreground = Brushes.Green;
+                await LoadSignatureInboxAsync();
+            }
+            catch (Exception ex)
+            {
+                SignatureInboxStatusTextBlock.Text = $"Failed to return item: {ex.Message}";
+                SignatureInboxStatusTextBlock.Foreground = Brushes.Red;
+            }
+        }
+
+        private async Task SignQueueItemAsync(SignatureInboxRow row)
+        {
+            var signerName = $"{AdminLastNameTextBox.Text}, {AdminFirstNameTextBox.Text}".Trim(' ', ',');
+            var result = await ApplyQueueSignatureAsync(row.QueueId, signerName);
+            if (result == null)
+            {
+                SignatureInboxStatusTextBlock.Text = "Signature failed or queue item not found.";
+                SignatureInboxStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            SignatureInboxStatusTextBlock.Text = result.Status == "Completed"
+                ? "Signature applied. Item completed."
+                : "Signature applied. Item advanced to next role.";
+            SignatureInboxStatusTextBlock.Foreground = Brushes.Green;
+            await LoadSignatureInboxAsync();
+        }
+
+        private async Task<SignatureQueueItem?> ApplyQueueSignatureAsync(int queueItemId, string signerName)
+        {
+            using var dbContext = new DatabaseContext();
+            dbContext.InitializeDatabase();
+
+            var item = await _signatureQueueRepository.GetByIdAsync(dbContext, queueItemId);
+            if (item == null || string.IsNullOrWhiteSpace(item.CurrentRole))
+            {
+                return null;
+            }
+
+            var fieldCandidates = GetSignatureFieldCandidates(item.FormType, item.CurrentRole);
+            var purpose = GetSignaturePurpose(item.FormType, item.CurrentRole);
+
+            var signedPath = await TrySignPdfWithCacAsync(item.DocumentPath, purpose, signerName, fieldCandidates);
+            if (string.IsNullOrWhiteSpace(signedPath))
+            {
+                return null;
+            }
+
+            var completedRole = item.CurrentRole;
+            item.DocumentPath = signedPath;
+            item.LastAction = $"{completedRole} signature applied";
+            _signatureQueueService.AdvanceAfterSignature(item, completedRole);
+
+            if (item.Status == "Completed")
+            {
+                var signedPathFinal = MovePdfToFolder(item.DocumentPath, StoragePathService.GetSignedDocsPath(Path.GetDirectoryName(item.DocumentPath) ?? item.DocumentPath));
+                item.DocumentPath = signedPathFinal;
+            }
+
+            await _signatureQueueRepository.UpdateAsync(dbContext, item);
+
+            if (item.DocumentId.HasValue)
+            {
+                var documentRepo = new DocumentRepository(dbContext);
+                var document = await documentRepo.GetDocumentByIdAsync(item.DocumentId.Value);
+                if (document != null)
+                {
+                    document.FilePath = item.DocumentPath;
+                    document.OriginalFilename = Path.GetFileName(item.DocumentPath);
+                    var fileInfo = new FileInfo(item.DocumentPath);
+                    document.FileSize = fileInfo.Exists ? fileInfo.Length : document.FileSize;
+                    document.DateModified = DateTime.Now;
+                    await documentRepo.UpdateDocumentAsync(document);
+                }
+            }
+
+            if (item.FormType == DocumentTypes.Form2760 && item.PersonnelId.HasValue)
+            {
+                var dd2760Repo = new DD2760FormRepository();
+                var dd2760Form = await dd2760Repo.GetByPersonnelIdAsync(dbContext, item.PersonnelId.Value);
+                if (dd2760Form != null)
+                {
+                    dd2760Form.PdfFilePath = item.DocumentPath;
+                    dd2760Form.PdfFileName = Path.GetFileName(item.DocumentPath);
+                    await dd2760Repo.UpdateAsync(dbContext, dd2760Form);
+                }
+            }
+
+            return item;
+        }
+
+        private static string GetSignatureFieldCandidates(string formType, string role)
+        {
+            if (formType == DocumentTypes.Form2760 && role == "Medical")
+            {
+                return "Watchstander Signature|Watchstander_Signature|Signature_Watchstander|Signature_1|Signature1|Signature";
+            }
+
+            if (formType == DocumentTypes.Form2760 && role == "AA&E")
+            {
+                return "Approval Signature|Approval_Signature|Signature_Approval|Signature_2|Signature2|ApproverSignature|Approver_Signature";
+            }
+
+            return "Signature";
+        }
+
+        private static string GetSignaturePurpose(string formType, string role)
+        {
+            if (formType == DocumentTypes.Form2760 && role == "Medical")
+            {
+                return "DD2760 Medical Signature";
+            }
+
+            if (formType == DocumentTypes.Form2760 && role == "AA&E")
+            {
+                return "DD2760 AA&E Signature";
+            }
+
+            return $"{DocumentTypes.GetDisplayName(formType)} Signature";
+        }
+
+        private static string MovePdfToFolder(string sourcePath, string targetFolder)
+        {
+            if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
+            {
+                return sourcePath;
+            }
+
+            Directory.CreateDirectory(targetFolder);
+            var targetPath = Path.Combine(targetFolder, Path.GetFileName(sourcePath));
+
+            if (string.Equals(sourcePath, targetPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return sourcePath;
+            }
+
+            File.Copy(sourcePath, targetPath, true);
+            File.Delete(sourcePath);
+            return targetPath;
+        }
+
+        private void LegacyCswSelectPdfButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new OpenFileDialog
+            {
+                Filter = "PDF Files (*.pdf)|*.pdf|All Files (*.*)|*.*",
+                Title = "Select 3591/2 PDF"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                LegacyCswPdfPathTextBox.Text = dialog.FileName;
+            }
+        }
+
+        private void LegacyCswAddSailorButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (LegacyCswSailorComboBox.SelectedItem is not SailorDisplayModel selectedSailor)
+            {
+                LegacyCswImportStatusTextBlock.Text = "Select a sailor before adding.";
+                LegacyCswImportStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            if (_legacyCswEntries.Any(e => e.PersonnelId == selectedSailor.Id))
+            {
+                LegacyCswImportStatusTextBlock.Text = "Sailor already added.";
+                LegacyCswImportStatusTextBlock.Foreground = Brushes.Gray;
+                return;
+            }
+
+            _legacyCswEntries.Add(new Legacy3591_2Entry
+            {
+                PersonnelId = selectedSailor.Id,
+                Name = selectedSailor.DisplayName,
+                Rate = selectedSailor.RankRate
+            });
+
+            LegacyCswImportStatusTextBlock.Text = string.Empty;
+        }
+
+        private async void LegacyCswImportButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!RequirePermission(RbacPermission.ManageQualifications, "Import Legacy 3591/2s"))
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(LegacyCswPdfPathTextBox.Text) || !File.Exists(LegacyCswPdfPathTextBox.Text))
+            {
+                LegacyCswImportStatusTextBlock.Text = "Select a valid 3591/2 PDF before importing.";
+                LegacyCswImportStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            if (!LegacyCswDatePicker.SelectedDate.HasValue)
+            {
+                LegacyCswImportStatusTextBlock.Text = "Select a qualification date before importing.";
+                LegacyCswImportStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            if (_legacyCswEntries.Count == 0)
+            {
+                LegacyCswImportStatusTextBlock.Text = "Add at least one sailor to import.";
+                LegacyCswImportStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            var hasWeaponSelection = _legacyCswEntries.Any(e =>
+                e.M240 || e.M2A1 || e.M240Sustainment || e.M2A1Sustainment);
+            if (!hasWeaponSelection)
+            {
+                LegacyCswImportStatusTextBlock.Text = "Select at least one weapon for the imported sailors.";
+                LegacyCswImportStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            try
+            {
+                using var dbContext = new DatabaseContext();
+                dbContext.InitializeDatabase();
+                var sessionRepo = new CrewServedWeaponSessionRepository();
+                var qualificationRepo = new QualificationRepository();
+
+                var dateQualified = LegacyCswDatePicker.SelectedDate.Value.Date;
+                int? m240SessionId = null;
+                int? m2a1SessionId = null;
+
+                if (_legacyCswEntries.Any(e => e.M240 || e.M240Sustainment))
+                {
+                    var session = new CrewServedWeaponSession
+                    {
+                        ShipStation = "Legacy Import",
+                        DivisionActivity = "Legacy Import",
+                        Weapon = "M240",
+                        RangeNameLocation = "Legacy Import",
+                        DateOfFiring = dateQualified,
+                        CourseOfFireScore = 100,
+                        IsQualified = true,
+                        PdfFilePath = LegacyCswPdfPathTextBox.Text
+                    };
+                    m240SessionId = await sessionRepo.AddSessionAsync(dbContext, session);
+                }
+
+                if (_legacyCswEntries.Any(e => e.M2A1 || e.M2A1Sustainment))
+                {
+                    var session = new CrewServedWeaponSession
+                    {
+                        ShipStation = "Legacy Import",
+                        DivisionActivity = "Legacy Import",
+                        Weapon = "M2A1",
+                        RangeNameLocation = "Legacy Import",
+                        DateOfFiring = dateQualified,
+                        CourseOfFireScore = 100,
+                        IsQualified = true,
+                        PdfFilePath = LegacyCswPdfPathTextBox.Text
+                    };
+                    m2a1SessionId = await sessionRepo.AddSessionAsync(dbContext, session);
+                }
+
+                var added = 0;
+
+                foreach (var entry in _legacyCswEntries)
+                {
+                    if ((entry.M240 || entry.M240Sustainment) && m240SessionId.HasValue)
+                    {
+                        await qualificationRepo.AddQualificationAsync(dbContext, new Qualification
+                        {
+                            PersonnelId = entry.PersonnelId,
+                            Weapon = "M240",
+                            Category = 3,
+                            DateQualified = dateQualified,
+                            CrewServedWeaponSessionId = m240SessionId,
+                            Details = new QualificationDetails
+                            {
+                                COFScore = 100,
+                                SustainmentDate = entry.M240Sustainment ? dateQualified : null
+                            }
+                        });
+                        added++;
+                    }
+
+                    if ((entry.M2A1 || entry.M2A1Sustainment) && m2a1SessionId.HasValue)
+                    {
+                        await qualificationRepo.AddQualificationAsync(dbContext, new Qualification
+                        {
+                            PersonnelId = entry.PersonnelId,
+                            Weapon = "M2A1",
+                            Category = 4,
+                            DateQualified = dateQualified,
+                            CrewServedWeaponSessionId = m2a1SessionId,
+                            Details = new QualificationDetails
+                            {
+                                COFScore = 100,
+                                SustainmentDate = entry.M2A1Sustainment ? dateQualified : null
+                            }
+                        });
+                        added++;
+                    }
+                }
+
+                _legacyCswEntries.Clear();
+                LegacyCswPdfPathTextBox.Clear();
+                LegacyCswDatePicker.SelectedDate = null;
+
+                LegacyCswImportStatusTextBlock.Text = $"Legacy import complete. Added {added} qualification(s).";
+                LegacyCswImportStatusTextBlock.Foreground = Brushes.Green;
+
+                await LoadData();
+                ApplyFilters();
+            }
+            catch (Exception ex)
+            {
+                LegacyCswImportStatusTextBlock.Text = $"Legacy import failed: {ex.Message}";
+                LegacyCswImportStatusTextBlock.Foreground = Brushes.Red;
+            }
+        }
+
         private void ViewQualifications_Click(object sender, RoutedEventArgs e)
         {
             // Switch to dashboard tab
@@ -594,7 +1464,7 @@ namespace QualTrack.UI
         }
 
         // Admin form event handlers
-        private async void Submit2760Button_Click(object sender, RoutedEventArgs e)
+        private async void Submit2760WatchstanderButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -615,6 +1485,7 @@ namespace QualTrack.UI
                     AdminStatusTextBlock.Foreground = Brushes.Red;
                     return;
                 }
+
 
                 // Validate that exactly one domestic violence response is selected
                 int checkedCount = 0;
@@ -730,23 +1601,54 @@ namespace QualTrack.UI
                     var pdfPath = pdfService.GenerateDD2760Pdf(dd2760Form, personnelForPdf);
 
                     var signerName = $"{AdminLastNameTextBox.Text}, {AdminFirstNameTextBox.Text}".Trim(' ', ',');
-                    var signedPath = await TrySignPdfWithCacAsync(pdfPath, "DD2760 Admin Form", signerName);
+                    var signedPath = await TrySignPdfWithCacAsync(
+                        pdfPath,
+                        "DD2760 Medical Signature",
+                        signerName,
+                        "Watchstander Signature|Watchstander_Signature|Signature_Watchstander|Signature_1|Signature1|Signature");
                     if (!string.IsNullOrWhiteSpace(signedPath))
                     {
                         pdfPath = signedPath;
                     }
+
+                    var pendingPath = MovePdfToFolder(pdfPath, StoragePathService.GetPendingDocsPath(Path.GetDirectoryName(pdfPath) ?? pdfPath));
+                    pdfPath = pendingPath;
                     
                     // Update the form with PDF path
                     dd2760Form.PdfFilePath = pdfPath;
                     dd2760Form.PdfFileName = Path.GetFileName(pdfPath);
                     await dd2760Repo.UpdateAsync(dbContext, dd2760Form);
-                    
-                    // Display the PDF
-                    Process.Start(new ProcessStartInfo
+
+                    var documentRepo = new DocumentRepository(dbContext);
+                    var fileInfo = new FileInfo(pdfPath);
+                    var document = await documentRepo.AddDocumentAsync(new Document
                     {
-                        FileName = pdfPath,
-                        UseShellExecute = true
+                        PersonnelId = personnelId,
+                        DocumentType = DocumentTypes.Form2760,
+                        OriginalFilename = Path.GetFileName(pdfPath),
+                        FilePath = pdfPath,
+                        FileSize = fileInfo.Exists ? fileInfo.Length : 0,
+                        UploadDate = DateTime.Now,
+                        OcrProcessed = false,
+                        DateCreated = DateTime.Now
                     });
+
+                    var queueItem = new SignatureQueueItem
+                    {
+                        DocumentId = document.Id,
+                        DocumentPath = pdfPath,
+                        FormType = DocumentTypes.Form2760,
+                        PersonnelId = personnelId,
+                        Status = "Pending",
+                        CurrentRole = "AA&E",
+                        RequiredRoles = "Medical|AA&E",
+                        CompletedRoles = "Medical",
+                        LastAction = "Medical review signature applied",
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now
+                    };
+
+                    await _signatureQueueRepository.AddAsync(dbContext, queueItem);
                 }
                 catch (Exception pdfEx)
                 {
@@ -758,7 +1660,7 @@ namespace QualTrack.UI
                 {
                     if (string.IsNullOrEmpty(AdminStatusTextBlock.Text) || AdminStatusTextBlock.Text.Contains("PDF generation failed"))
                     {
-                        AdminStatusTextBlock.Text = "2760 form submitted and PDF generated successfully!";
+                        AdminStatusTextBlock.Text = "Medical signature applied. Sent to AA&E inbox.";
                         AdminStatusTextBlock.Foreground = Brushes.Green;
                     }
                     
@@ -771,6 +1673,73 @@ namespace QualTrack.UI
                     AdminStatusTextBlock.Text = "Failed to save 2760 form.";
                     AdminStatusTextBlock.Foreground = Brushes.Red;
                 }
+            }
+            catch (Exception ex)
+            {
+                AdminStatusTextBlock.Text = $"Error: {ex.Message}";
+                AdminStatusTextBlock.Foreground = Brushes.Red;
+            }
+        }
+
+        private async void Submit2760ApprovalButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(AdminDODIdTextBox.Text))
+                {
+                    AdminStatusTextBlock.Text = "Please enter a DOD ID to locate the 2760 form.";
+                    AdminStatusTextBlock.Foreground = Brushes.Red;
+                    return;
+                }
+
+                using var dbContext = new DatabaseContext();
+                dbContext.InitializeDatabase();
+
+                var personnelRepo = new PersonnelRepository();
+                var existingPersonnel = await personnelRepo.GetPersonnelByDODIdAsync(dbContext, AdminDODIdTextBox.Text.Trim());
+                if (existingPersonnel == null)
+                {
+                    AdminStatusTextBlock.Text = "Personnel not found for the provided DOD ID.";
+                    AdminStatusTextBlock.Foreground = Brushes.Red;
+                    return;
+                }
+
+                var personnelId = existingPersonnel.Id;
+                var queueItems = await _signatureQueueRepository.GetInboxAsync(dbContext, "AA&E", null, DocumentTypes.Form2760);
+                var queueItem = queueItems.FirstOrDefault(item => item.PersonnelId == personnelId);
+
+                if (queueItem == null)
+                {
+                AdminStatusTextBlock.Text = "No AA&E inbox item found for this sailor.";
+                    AdminStatusTextBlock.Foreground = Brushes.Red;
+                    return;
+                }
+
+                var signerName = $"{AdminLastNameTextBox.Text}, {AdminFirstNameTextBox.Text}".Trim(' ', ',');
+                var updatedItem = await ApplyQueueSignatureAsync(queueItem.Id, signerName);
+                if (updatedItem == null)
+                {
+                    AdminStatusTextBlock.Text = "Approval signature was not applied (CAC not available or signature failed).";
+                    AdminStatusTextBlock.Foreground = Brushes.Orange;
+                    return;
+                }
+
+                AdminStatusTextBlock.Text = updatedItem.Status == "Completed"
+                    ? "Approval signature applied. PDF ready."
+                    : "Approval signature applied. Sent to next role.";
+                AdminStatusTextBlock.Foreground = Brushes.Green;
+
+                if (updatedItem.Status == "Completed" && File.Exists(updatedItem.DocumentPath))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = updatedItem.DocumentPath,
+                        UseShellExecute = true
+                    });
+                }
+
+                await LoadData();
+                ApplyFilters();
             }
             catch (Exception ex)
             {
@@ -1148,7 +2117,7 @@ namespace QualTrack.UI
                         throw new FileNotFoundException($"PDF file was not created at: {pdfPath}");
                     }
                     
-                    var signedPath = await TrySignPdfWithCacAsync(pdfPath, "AA&E Screening Form", AAENameScreenerTextBox.Text);
+                    var signedPath = await TrySignPdfWithCacAsync(pdfPath, "AA&E Screening Form", AAENameScreenerTextBox.Text, "Signature_Screener");
                     if (!string.IsNullOrWhiteSpace(signedPath))
                     {
                         pdfPath = signedPath;
@@ -1388,7 +2357,7 @@ namespace QualTrack.UI
                         DeadlyForceObserverSignatureTextBox.Text.Trim(),
                         DeadlyForceObserverDatePicker.SelectedDate.Value);
 
-                    var signedPath = await TrySignPdfWithCacAsync(pdfPath, "Deadly Force Training", DeadlyForceObserverSignatureTextBox.Text.Trim());
+                    var signedPath = await TrySignPdfWithCacAsync(pdfPath, "Deadly Force Training", DeadlyForceObserverSignatureTextBox.Text.Trim(), "Signature (Observer)");
                     if (!string.IsNullOrWhiteSpace(signedPath))
                     {
                         pdfPath = signedPath;
@@ -1672,7 +2641,6 @@ namespace QualTrack.UI
             DD2760CertificationCheckBox.IsChecked = false;
             DD2760SSNTextBox.Clear();
             DD2760DateSignedPicker.SelectedDate = null;
-            
             AdminStatusTextBlock.Text = "";
         }
 
@@ -1703,6 +2671,15 @@ namespace QualTrack.UI
             {
                 e.Handled = true;
                 SearchSailor_Click(sender, e);
+            }
+        }
+
+        private void SamiCswiSearchLastNameTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                SamiCswiSearchSailor_Click(sender, e);
             }
         }
 
@@ -1760,12 +2737,505 @@ namespace QualTrack.UI
             }
         }
 
+        private async void SamiCswiSearchSailor_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var lastName = SamiCswiSearchLastNameTextBox.Text.Trim();
+                if (string.IsNullOrWhiteSpace(lastName))
+                {
+                    SamiCswiSearchResultTextBlock.Text = "Please enter a last name to search.";
+                    return;
+                }
+
+                using var dbContext = new DatabaseContext();
+                dbContext.InitializeDatabase();
+
+                var personnelRepo = new PersonnelRepository();
+                var allPersonnel = await personnelRepo.GetAllPersonnelAsync(dbContext);
+                var matchingPersonnel = allPersonnel.Where(p =>
+                    p.LastName.Equals(lastName, StringComparison.OrdinalIgnoreCase)).ToList();
+
+                SamiCswiSearchResultsComboBox.Visibility = Visibility.Collapsed;
+                SamiCswiSearchResultsComboBox.ItemsSource = null;
+                SetSamiCswiSelectedSailor(null);
+
+                if (matchingPersonnel.Count == 0)
+                {
+                    SamiCswiSearchResultTextBlock.Text = $"No sailors found with last name '{lastName}'";
+                    return;
+                }
+
+                if (matchingPersonnel.Count == 1)
+                {
+                    var sailor = matchingPersonnel.First();
+                    var displayModel = new SailorDisplayModel(sailor.Id, sailor.LastName, sailor.FirstName, sailor.DODId, sailor.Rank, sailor.Rate);
+                    SetSamiCswiSelectedSailor(displayModel);
+                    SamiCswiSearchResultTextBlock.Text = $"Found: {displayModel.DisplayName}";
+                }
+                else
+                {
+                    var matches = matchingPersonnel
+                        .Select(p => new SailorDisplayModel(p.Id, p.LastName, p.FirstName, p.DODId, p.Rank, p.Rate))
+                        .ToList();
+                    SamiCswiSearchResultsComboBox.ItemsSource = matches;
+                    SamiCswiSearchResultsComboBox.Visibility = Visibility.Visible;
+                    SamiCswiSearchResultsComboBox.SelectedIndex = -1;
+                    SamiCswiSearchResultTextBlock.Text = $"Found {matchingPersonnel.Count} matches. Please select one.";
+                }
+            }
+            catch (Exception ex)
+            {
+                SamiCswiSearchResultTextBlock.Text = $"Error searching: {ex.Message}";
+            }
+        }
+
         private void AdminSearchResultsComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (AdminSearchResultsComboBox.SelectedItem is SailorDisplayModel selectedSailor)
             {
                 PopulateAdminFormFromSailorDisplay(selectedSailor);
                 SearchResultTextBlock.Text = $"Selected: {selectedSailor.DisplayName}";
+            }
+        }
+
+        private void SamiCswiSearchResultsComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (SamiCswiSearchResultsComboBox.SelectedItem is SailorDisplayModel selectedSailor)
+            {
+                SetSamiCswiSelectedSailor(selectedSailor);
+                SamiCswiSearchResultTextBlock.Text = $"Selected: {selectedSailor.DisplayName}";
+            }
+        }
+
+        private void SamiCswiRoleComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _ = LoadInstructorCredentialsForSelection();
+        }
+
+        private void SetSamiCswiSelectedSailor(SailorDisplayModel? sailor)
+        {
+            _samiCswiSelectedSailor = sailor;
+
+            if (sailor == null)
+            {
+                SamiCswiSelectedSailorTextBlock.Text = "No sailor selected";
+                AddSamiButton.IsEnabled = false;
+                AddCswiButton.IsEnabled = false;
+                return;
+            }
+
+            SamiCswiSelectedSailorTextBlock.Text = $"Selected: {sailor.DisplayName} ({sailor.RankRate})";
+            AddSamiButton.IsEnabled = true;
+            AddCswiButton.IsEnabled = true;
+            _ = LoadInstructorCredentialsForSelection();
+        }
+
+        private void ClearSamiCswiSelection()
+        {
+            SetSamiCswiSelectedSailor(null);
+            SamiCswiSearchResultsComboBox.SelectedIndex = -1;
+            SamiCswiSearchResultsComboBox.ItemsSource = null;
+            SamiCswiSearchResultsComboBox.Visibility = Visibility.Collapsed;
+            SamiCswiSearchLastNameTextBox.Clear();
+            SamiCswiSearchResultTextBlock.Text = string.Empty;
+            DesignationStatusTextBlock.Text = string.Empty;
+            InstructorQualHistoryGrid.ItemsSource = null;
+        }
+
+        private async Task LoadSamiCswiDashboard()
+        {
+            try
+            {
+                using var dbContext = new DatabaseContext();
+                dbContext.InitializeDatabase();
+                var personnelRepo = new PersonnelRepository();
+                var allPersonnel = await personnelRepo.GetPersonnelWithQualificationsAsync(dbContext);
+                var credentialRepo = new InstructorCredentialRepository();
+
+                var rows = new List<SamiCswiDashboardRow>();
+                foreach (var person in allPersonnel.Where(p => p.IsSami || p.IsCswi)
+                                                   .OrderBy(p => p.LastName)
+                                                   .ThenBy(p => p.FirstName))
+                {
+                    var samiDesignation = person.IsSami
+                        ? await credentialRepo.GetDesignationAsync(dbContext, person.Id, "SAMI")
+                        : null;
+                    var cswiDesignation = person.IsCswi
+                        ? await credentialRepo.GetDesignationAsync(dbContext, person.Id, "CSWI")
+                        : null;
+
+                    var designationOk = (!person.IsSami || samiDesignation != null)
+                        && (!person.IsCswi || cswiDesignation != null);
+
+                    var viewModel = new PersonnelViewModel(person);
+
+                    rows.Add(new SamiCswiDashboardRow
+                    {
+                        PersonnelId = person.Id,
+                        Name = $"{person.LastName}, {person.FirstName}",
+                        Rate = person.Rate,
+                        Sami = person.IsSami ? "X" : string.Empty,
+                        Cswi = person.IsCswi ? "X" : string.Empty,
+                        DesignationStatus = "X",
+                        DesignationColor = designationOk ? Brushes.LightGreen : Brushes.Red,
+                        M9Qualified = viewModel.M9Qualified,
+                        M9Color = viewModel.M9Color,
+                        M9AdminBlocked = viewModel.M9AdminBlocked,
+                        M4M16Qualified = viewModel.M4M16Qualified,
+                        M4M16Color = viewModel.M4M16Color,
+                        M4M16AdminBlocked = viewModel.M4M16AdminBlocked,
+                        M500Qualified = viewModel.M500Qualified,
+                        M500Color = viewModel.M500Color,
+                        M500AdminBlocked = viewModel.M500AdminBlocked,
+                        M240Qualified = viewModel.M240Qualified,
+                        M240Color = viewModel.M240Color,
+                        M240AdminBlocked = viewModel.M240AdminBlocked,
+                        FiftyCalQualified = viewModel.FiftyCalQualified,
+                        FiftyCalColor = viewModel.FiftyCalColor,
+                        FiftyCalAdminBlocked = viewModel.FiftyCalAdminBlocked
+                    });
+                }
+
+                SamiCswiDashboardGrid.ItemsSource = rows;
+            }
+            catch (Exception ex)
+            {
+                SamiCswiStatusTextBlock.Text = $"Error loading SAMI/CSWI dashboard: {ex.Message}";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+            }
+        }
+
+        private async Task LoadInstructorCredentialsForSelection()
+        {
+            if (_samiCswiSelectedSailor == null)
+            {
+                DesignationStatusTextBlock.Text = "Select a sailor to view designation status.";
+                InstructorQualHistoryGrid.ItemsSource = null;
+                return;
+            }
+
+            var role = GetSelectedSamiCswiRole();
+            if (string.IsNullOrWhiteSpace(role))
+            {
+                DesignationStatusTextBlock.Text = "Select a role to view designation status.";
+                InstructorQualHistoryGrid.ItemsSource = null;
+                return;
+            }
+
+            try
+            {
+                using var dbContext = new DatabaseContext();
+                dbContext.InitializeDatabase();
+                var repo = new InstructorCredentialRepository();
+
+                var designation = await repo.GetDesignationAsync(dbContext, _samiCswiSelectedSailor.Id, role);
+                if (designation == null)
+                {
+                    DesignationStatusTextBlock.Text = "No designation letter on file.";
+                }
+                else
+                {
+                    var fileName = string.IsNullOrWhiteSpace(designation.PdfFileName) ? "No file name" : designation.PdfFileName;
+                    DesignationStatusTextBlock.Text = $"Designation on file: {designation.DesignationDate:yyyy-MM-dd} ({fileName})";
+                }
+
+                var qualifications = await repo.GetQualificationsAsync(dbContext, _samiCswiSelectedSailor.Id, role);
+                InstructorQualHistoryGrid.ItemsSource = qualifications.Select(q => new InstructorQualificationRow
+                {
+                    Date = q.QualificationDate.ToString("yyyy-MM-dd"),
+                    Type = q.QualificationType,
+                    FileName = q.PdfFileName ?? string.Empty
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                SamiCswiStatusTextBlock.Text = $"Error loading instructor credentials: {ex.Message}";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+            }
+        }
+
+        private async void AddSamiButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!RequirePermission(RbacPermission.ManageSystem, "Assign SAMI"))
+            {
+                return;
+            }
+
+            if (_samiCswiSelectedSailor == null)
+            {
+                SamiCswiStatusTextBlock.Text = "Select a sailor before assigning SAMI.";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            try
+            {
+                using var dbContext = new DatabaseContext();
+                dbContext.InitializeDatabase();
+                var personnelRepo = new PersonnelRepository();
+
+                var personnel = await personnelRepo.GetPersonnelByIdAsync(dbContext, _samiCswiSelectedSailor.Id);
+                if (personnel == null)
+                {
+                    SamiCswiStatusTextBlock.Text = "Selected sailor could not be found.";
+                    SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+                    return;
+                }
+
+                if (personnel.IsSami)
+                {
+                    SamiCswiStatusTextBlock.Text = $"{_samiCswiSelectedSailor.DisplayName} is already a SAMI.";
+                    SamiCswiStatusTextBlock.Foreground = Brushes.Gray;
+                    return;
+                }
+
+                personnel.IsSami = true;
+                var success = await personnelRepo.UpdatePersonnelAsync(dbContext, personnel);
+
+                SamiCswiStatusTextBlock.Text = success
+                    ? $"{_samiCswiSelectedSailor.DisplayName} added as SAMI."
+                    : "Failed to assign SAMI role.";
+                SamiCswiStatusTextBlock.Foreground = success ? Brushes.Green : Brushes.Red;
+                if (success)
+                {
+                    await LoadSamiCswiDashboard();
+                    ClearSamiCswiSelection();
+                }
+            }
+            catch (Exception ex)
+            {
+                SamiCswiStatusTextBlock.Text = $"Error assigning SAMI: {ex.Message}";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+            }
+        }
+
+        private async void AddCswiButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!RequirePermission(RbacPermission.ManageSystem, "Assign CSWI"))
+            {
+                return;
+            }
+
+            if (_samiCswiSelectedSailor == null)
+            {
+                SamiCswiStatusTextBlock.Text = "Select a sailor before assigning CSWI.";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            try
+            {
+                using var dbContext = new DatabaseContext();
+                dbContext.InitializeDatabase();
+                var personnelRepo = new PersonnelRepository();
+
+                var personnel = await personnelRepo.GetPersonnelByIdAsync(dbContext, _samiCswiSelectedSailor.Id);
+                if (personnel == null)
+                {
+                    SamiCswiStatusTextBlock.Text = "Selected sailor could not be found.";
+                    SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+                    return;
+                }
+
+                if (personnel.IsCswi)
+                {
+                    SamiCswiStatusTextBlock.Text = $"{_samiCswiSelectedSailor.DisplayName} is already a CSWI.";
+                    SamiCswiStatusTextBlock.Foreground = Brushes.Gray;
+                    return;
+                }
+
+                personnel.IsCswi = true;
+                var success = await personnelRepo.UpdatePersonnelAsync(dbContext, personnel);
+
+                SamiCswiStatusTextBlock.Text = success
+                    ? $"{_samiCswiSelectedSailor.DisplayName} added as CSWI."
+                    : "Failed to assign CSWI role.";
+                SamiCswiStatusTextBlock.Foreground = success ? Brushes.Green : Brushes.Red;
+                if (success)
+                {
+                    await LoadSamiCswiDashboard();
+                    ClearSamiCswiSelection();
+                }
+            }
+            catch (Exception ex)
+            {
+                SamiCswiStatusTextBlock.Text = $"Error assigning CSWI: {ex.Message}";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+            }
+        }
+
+        private async void UploadDesignationLetter_Click(object sender, RoutedEventArgs e)
+        {
+            if (!RequirePermission(RbacPermission.ManageSystem, "Upload Designation Letter"))
+            {
+                return;
+            }
+
+            if (_samiCswiSelectedSailor == null)
+            {
+                SamiCswiStatusTextBlock.Text = "Select a sailor before uploading a designation letter.";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            if (!DesignationDatePicker.SelectedDate.HasValue)
+            {
+                SamiCswiStatusTextBlock.Text = "Select a designation date before uploading.";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            var role = GetSelectedSamiCswiRole();
+            if (string.IsNullOrWhiteSpace(role))
+            {
+                SamiCswiStatusTextBlock.Text = "Select a role before uploading a designation letter.";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            var dialog = new OpenFileDialog
+            {
+                Filter = "PDF Files (*.pdf)|*.pdf|All Files (*.*)|*.*",
+                Title = "Select Designation Letter"
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            try
+            {
+                using var dbContext = new DatabaseContext();
+                dbContext.InitializeDatabase();
+                var repo = new InstructorCredentialRepository();
+
+                var existing = await repo.GetDesignationAsync(dbContext, _samiCswiSelectedSailor.Id, role);
+                if (existing != null)
+                {
+                    SamiCswiStatusTextBlock.Text = "Designation letter already on file for this role.";
+                    SamiCswiStatusTextBlock.Foreground = Brushes.Gray;
+                    return;
+                }
+
+                var designation = new InstructorDesignation
+                {
+                    PersonnelId = _samiCswiSelectedSailor.Id,
+                    Role = role,
+                    DesignationDate = DesignationDatePicker.SelectedDate.Value,
+                    PdfFilePath = dialog.FileName,
+                    PdfFileName = System.IO.Path.GetFileName(dialog.FileName),
+                    DateCreated = DateTime.Now
+                };
+
+                await repo.AddDesignationAsync(dbContext, designation);
+                SamiCswiStatusTextBlock.Text = "Designation letter saved.";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Green;
+                await LoadInstructorCredentialsForSelection();
+            }
+            catch (Exception ex)
+            {
+                SamiCswiStatusTextBlock.Text = $"Error saving designation letter: {ex.Message}";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+            }
+        }
+
+        private async void UploadInstructorQualification_Click(object sender, RoutedEventArgs e)
+        {
+            if (!RequirePermission(RbacPermission.ManageSystem, "Upload Instructor Qualification"))
+            {
+                return;
+            }
+
+            if (_samiCswiSelectedSailor == null)
+            {
+                SamiCswiStatusTextBlock.Text = "Select a sailor before uploading a qualification.";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            if (!InstructorQualDatePicker.SelectedDate.HasValue)
+            {
+                SamiCswiStatusTextBlock.Text = "Select a qualification date before uploading.";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            var typeItem = InstructorQualTypeComboBox.SelectedItem as ComboBoxItem;
+            var qualificationType = typeItem?.Content?.ToString() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(qualificationType))
+            {
+                SamiCswiStatusTextBlock.Text = "Select a qualification type before uploading.";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            var role = GetSelectedSamiCswiRole();
+            if (string.IsNullOrWhiteSpace(role))
+            {
+                SamiCswiStatusTextBlock.Text = "Select a role before uploading a qualification.";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+                return;
+            }
+
+            var dialog = new OpenFileDialog
+            {
+                Filter = "PDF Files (*.pdf)|*.pdf|All Files (*.*)|*.*",
+                Title = "Select Qualification Form"
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            try
+            {
+                using var dbContext = new DatabaseContext();
+                dbContext.InitializeDatabase();
+                var repo = new InstructorCredentialRepository();
+
+                var qualification = new InstructorQualification
+                {
+                    PersonnelId = _samiCswiSelectedSailor.Id,
+                    Role = role,
+                    QualificationDate = InstructorQualDatePicker.SelectedDate.Value,
+                    QualificationType = qualificationType,
+                    PdfFilePath = dialog.FileName,
+                    PdfFileName = System.IO.Path.GetFileName(dialog.FileName),
+                    DateCreated = DateTime.Now
+                };
+
+                await repo.AddQualificationAsync(dbContext, qualification);
+                SamiCswiStatusTextBlock.Text = "Instructor qualification saved.";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Green;
+                await LoadInstructorCredentialsForSelection();
+            }
+            catch (Exception ex)
+            {
+                SamiCswiStatusTextBlock.Text = $"Error saving instructor qualification: {ex.Message}";
+                SamiCswiStatusTextBlock.Foreground = Brushes.Red;
+            }
+        }
+
+        private string GetSelectedSamiCswiRole()
+        {
+            var roleItem = SamiCswiRoleComboBox.SelectedItem as ComboBoxItem;
+            return roleItem?.Content?.ToString() ?? string.Empty;
+        }
+
+        private async void SamiCswiDashboardRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            await LoadSamiCswiDashboard();
+        }
+
+        private void SamiCswiDashboardGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (SamiCswiDashboardGrid.SelectedItem is SamiCswiDashboardRow selectedRow)
+            {
+                var jacketWindow = new InstructorJacketWindow(selectedRow.PersonnelId);
+                jacketWindow.Show();
             }
         }
 
@@ -2459,6 +3929,8 @@ END OF REPORT";
                     p.Id, p.LastName, p.FirstName, p.DODId, p.Rank, p.Rate)).ToList();
                 
                 SailorSelectionComboBox.ItemsSource = sailorModels;
+                LegacySailorComboBox.ItemsSource = sailorModels;
+                LegacyCswSailorComboBox.ItemsSource = sailorModels;
                 
                 // Debug: Show how many sailors were loaded
                 Console.WriteLine($"Loaded {sailorModels.Count} sailors for dropdown");
@@ -2467,6 +3939,26 @@ END OF REPORT";
             {
                 MessageBox.Show($"Error loading sailor data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void InitializeSignatureInboxFilters()
+        {
+            SignatureInboxStatusComboBox.ItemsSource = new List<string>
+            {
+                "All",
+                "Pending",
+                "Returned",
+                "Completed"
+            };
+
+            SignatureInboxFormComboBox.ItemsSource = new List<string>
+            {
+                "All",
+                DocumentTypes.Form2760
+            };
+
+            SignatureInboxStatusComboBox.SelectedIndex = 0;
+            SignatureInboxFormComboBox.SelectedIndex = 0;
         }
 
         private void DE_AddRow_Click(object sender, RoutedEventArgs e)
@@ -2629,7 +4121,7 @@ END OF REPORT";
                     
                     if (!string.IsNullOrWhiteSpace(pdfPath))
                     {
-                        var signedPath = await TrySignPdfWithCacAsync(pdfPath, "3591/1 Qualification", session.RsoSignature ?? string.Empty);
+                        var signedPath = await TrySignPdfWithCacAsync(pdfPath, "3591/1 Qualification", session.RsoSignature ?? string.Empty, "CERTIFYING SIGNATURE");
                         if (!string.IsNullOrWhiteSpace(signedPath))
                         {
                             pdfPath = signedPath;
@@ -3072,7 +4564,9 @@ END OF REPORT";
         {
             try
             {
-                string generatedFormsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GeneratedForms");
+                string generatedFormsPath = StoragePathService.GetGeneratedDocsPath(
+                    "3591_1_Forms",
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GeneratedForms"));
                 
                 if (!Directory.Exists(generatedFormsPath))
                 {
@@ -3531,42 +5025,6 @@ END OF REPORT";
             // Optional: Show preview of selected sailor
         }
 
-        private void CSW_SailorLookupTextBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key != Key.Enter)
-            {
-                return;
-            }
-
-            var query = CSW_SailorLookupTextBox.Text?.Trim();
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                return;
-            }
-
-            var sailorModels = CSW_SailorSelectionComboBox.ItemsSource as IEnumerable<SailorDisplayModel>;
-            var matches = sailorModels?
-                .Where(sailor => sailor.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase))
-                .ToList() ?? new List<SailorDisplayModel>();
-
-            if (matches.Count == 0)
-            {
-                MessageBox.Show($"No sailor found matching '{query}'.", "Lookup", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            else if (matches.Count == 1)
-            {
-                CSW_SailorSelectionComboBox.SelectedItem = matches[0];
-            }
-            else
-            {
-                CSW_SailorSelectionComboBox.SelectedItem = null;
-                CSW_SailorSelectionComboBox.IsDropDownOpen = true;
-                MessageBox.Show($"Found {matches.Count} matches. Please select the correct sailor from the list (DODID shown).", "Lookup", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-
-            e.Handled = true;
-        }
-
         private void CSW_AddSelectedSailor_Click(object sender, RoutedEventArgs e)
         {
             if (CSW_SailorSelectionComboBox.SelectedItem is SailorDisplayModel selectedSailor)
@@ -3735,7 +5193,7 @@ END OF REPORT";
                             pdfPath = await Generate3591_2PdfForSession(session, cswEntries.ToList());
                             if (!string.IsNullOrWhiteSpace(pdfPath))
                             {
-                                var signedPath = await TrySignPdfWithCacAsync(pdfPath, "3591/2 Qualification", session.InstructorName ?? string.Empty);
+                                var signedPath = await TrySignPdfWithCacAsync(pdfPath, "3591/2 Qualification", session.InstructorName ?? string.Empty, "Signature");
                                 if (!string.IsNullOrWhiteSpace(signedPath))
                                 {
                                     pdfPath = signedPath;
@@ -3877,7 +5335,9 @@ END OF REPORT";
 
         private void CSW_OpenGeneratedForms_Click(object sender, RoutedEventArgs e)
         {
-            string formsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GeneratedForms");
+            string formsDir = StoragePathService.GetGeneratedDocsPath(
+                "3591_2_Forms",
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GeneratedForms"));
             if (Directory.Exists(formsDir))
             {
                 Process.Start("explorer.exe", formsDir);

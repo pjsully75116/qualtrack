@@ -15,7 +15,7 @@ namespace QualTrack.Data.Repositories
             
             using var connection = dbContext.GetConnection();
             var command = connection.CreateCommand();
-            command.CommandText = "SELECT id, dod_id, last_name, first_name, rate, rank FROM personnel ORDER BY last_name, first_name";
+            command.CommandText = "SELECT id, dod_id, last_name, first_name, rate, rank, is_sami, is_cswi FROM personnel ORDER BY last_name, first_name";
             
             using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -27,7 +27,9 @@ namespace QualTrack.Data.Repositories
                     LastName = reader.GetString(reader.GetOrdinal("last_name")),
                     FirstName = reader.GetString(reader.GetOrdinal("first_name")),
                     Rate = reader.GetString(reader.GetOrdinal("rate")),
-                    Rank = reader.GetString(reader.GetOrdinal("rank"))
+                    Rank = reader.GetString(reader.GetOrdinal("rank")),
+                    IsSami = !reader.IsDBNull(reader.GetOrdinal("is_sami")) && reader.GetInt32(reader.GetOrdinal("is_sami")) == 1,
+                    IsCswi = !reader.IsDBNull(reader.GetOrdinal("is_cswi")) && reader.GetInt32(reader.GetOrdinal("is_cswi")) == 1
                 };
                 
                 // Load duty sections for this personnel
@@ -44,7 +46,7 @@ namespace QualTrack.Data.Repositories
             using var connection = dbContext.GetConnection();
             var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT id, dod_id, last_name, first_name, rate, rank 
+                SELECT id, dod_id, last_name, first_name, rate, rank, is_sami, is_cswi
                 FROM personnel 
                 WHERE id = @id";
             command.Parameters.AddWithValue("@id", id);
@@ -58,7 +60,9 @@ namespace QualTrack.Data.Repositories
                     LastName = reader.GetString(reader.GetOrdinal("last_name")),
                     FirstName = reader.GetString(reader.GetOrdinal("first_name")),
                     Rate = reader.GetString(reader.GetOrdinal("rate")),
-                    Rank = reader.GetString(reader.GetOrdinal("rank"))
+                    Rank = reader.GetString(reader.GetOrdinal("rank")),
+                    IsSami = !reader.IsDBNull(reader.GetOrdinal("is_sami")) && reader.GetInt32(reader.GetOrdinal("is_sami")) == 1,
+                    IsCswi = !reader.IsDBNull(reader.GetOrdinal("is_cswi")) && reader.GetInt32(reader.GetOrdinal("is_cswi")) == 1
                 };
             }
             return null;
@@ -69,7 +73,7 @@ namespace QualTrack.Data.Repositories
             using var connection = dbContext.GetConnection();
             var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT id, dod_id, last_name, first_name, rate, rank 
+                SELECT id, dod_id, last_name, first_name, rate, rank, is_sami, is_cswi
                 FROM personnel 
                 WHERE dod_id = @dodId";
             command.Parameters.AddWithValue("@dodId", dodId);
@@ -83,7 +87,9 @@ namespace QualTrack.Data.Repositories
                     LastName = reader.GetString(reader.GetOrdinal("last_name")),
                     FirstName = reader.GetString(reader.GetOrdinal("first_name")),
                     Rate = reader.GetString(reader.GetOrdinal("rate")),
-                    Rank = reader.GetString(reader.GetOrdinal("rank"))
+                    Rank = reader.GetString(reader.GetOrdinal("rank")),
+                    IsSami = !reader.IsDBNull(reader.GetOrdinal("is_sami")) && reader.GetInt32(reader.GetOrdinal("is_sami")) == 1,
+                    IsCswi = !reader.IsDBNull(reader.GetOrdinal("is_cswi")) && reader.GetInt32(reader.GetOrdinal("is_cswi")) == 1
                 };
             }
             return null;
@@ -93,7 +99,7 @@ namespace QualTrack.Data.Repositories
         {
             using var connection = dbContext.GetConnection();
             var command = connection.CreateCommand();
-            command.CommandText = "SELECT id, dod_id, last_name, first_name, rate, rank FROM personnel WHERE last_name = @lastName AND first_name = @firstName AND rate = @rate";
+            command.CommandText = "SELECT id, dod_id, last_name, first_name, rate, rank, is_sami, is_cswi FROM personnel WHERE last_name = @lastName AND first_name = @firstName AND rate = @rate";
             command.Parameters.AddWithValue("@lastName", lastName);
             command.Parameters.AddWithValue("@firstName", firstName);
             command.Parameters.AddWithValue("@rate", rate);
@@ -108,7 +114,9 @@ namespace QualTrack.Data.Repositories
                     LastName = reader.GetString(reader.GetOrdinal("last_name")),
                     FirstName = reader.GetString(reader.GetOrdinal("first_name")),
                     Rate = reader.GetString(reader.GetOrdinal("rate")),
-                    Rank = reader.GetString(reader.GetOrdinal("rank"))
+                    Rank = reader.GetString(reader.GetOrdinal("rank")),
+                    IsSami = !reader.IsDBNull(reader.GetOrdinal("is_sami")) && reader.GetInt32(reader.GetOrdinal("is_sami")) == 1,
+                    IsCswi = !reader.IsDBNull(reader.GetOrdinal("is_cswi")) && reader.GetInt32(reader.GetOrdinal("is_cswi")) == 1
                 };
                 
                 // Load duty sections
@@ -124,12 +132,14 @@ namespace QualTrack.Data.Repositories
         {
             using var connection = dbContext.GetConnection();
             var command = connection.CreateCommand();
-            command.CommandText = "INSERT INTO personnel (dod_id, last_name, first_name, rate, rank) VALUES (@dod_id, @lastName, @firstName, @rate, @rank); SELECT last_insert_rowid();";
+            command.CommandText = "INSERT INTO personnel (dod_id, last_name, first_name, rate, rank, is_sami, is_cswi) VALUES (@dod_id, @lastName, @firstName, @rate, @rank, @isSami, @isCswi); SELECT last_insert_rowid();";
             command.Parameters.AddWithValue("@dod_id", personnel.DODId);
             command.Parameters.AddWithValue("@lastName", personnel.LastName);
             command.Parameters.AddWithValue("@firstName", personnel.FirstName);
             command.Parameters.AddWithValue("@rate", personnel.Rate);
             command.Parameters.AddWithValue("@rank", personnel.Rank);
+            command.Parameters.AddWithValue("@isSami", personnel.IsSami ? 1 : 0);
+            command.Parameters.AddWithValue("@isCswi", personnel.IsCswi ? 1 : 0);
             
             var id = Convert.ToInt32(await command.ExecuteScalarAsync());
             
@@ -149,12 +159,14 @@ namespace QualTrack.Data.Repositories
         {
             using var connection = dbContext.GetConnection();
             var command = connection.CreateCommand();
-            command.CommandText = "UPDATE personnel SET dod_id = @dod_id, last_name = @lastName, first_name = @firstName, rate = @rate, rank = @rank WHERE id = @id";
+            command.CommandText = "UPDATE personnel SET dod_id = @dod_id, last_name = @lastName, first_name = @firstName, rate = @rate, rank = @rank, is_sami = @isSami, is_cswi = @isCswi WHERE id = @id";
             command.Parameters.AddWithValue("@dod_id", personnel.DODId);
             command.Parameters.AddWithValue("@lastName", personnel.LastName);
             command.Parameters.AddWithValue("@firstName", personnel.FirstName);
             command.Parameters.AddWithValue("@rate", personnel.Rate);
             command.Parameters.AddWithValue("@rank", personnel.Rank);
+            command.Parameters.AddWithValue("@isSami", personnel.IsSami ? 1 : 0);
+            command.Parameters.AddWithValue("@isCswi", personnel.IsCswi ? 1 : 0);
             command.Parameters.AddWithValue("@id", personnel.Id);
             
             var rowsAffected = await command.ExecuteNonQueryAsync();
@@ -175,6 +187,24 @@ namespace QualTrack.Data.Repositories
                 }
             }
             
+            return rowsAffected > 0;
+        }
+
+        public async Task<bool> UpdatePersonnelFieldsAsync(DatabaseContext dbContext, Personnel personnel)
+        {
+            using var connection = dbContext.GetConnection();
+            var command = connection.CreateCommand();
+            command.CommandText = "UPDATE personnel SET dod_id = @dod_id, last_name = @lastName, first_name = @firstName, rate = @rate, rank = @rank, is_sami = @isSami, is_cswi = @isCswi WHERE id = @id";
+            command.Parameters.AddWithValue("@dod_id", personnel.DODId);
+            command.Parameters.AddWithValue("@lastName", personnel.LastName);
+            command.Parameters.AddWithValue("@firstName", personnel.FirstName);
+            command.Parameters.AddWithValue("@rate", personnel.Rate);
+            command.Parameters.AddWithValue("@rank", personnel.Rank);
+            command.Parameters.AddWithValue("@isSami", personnel.IsSami ? 1 : 0);
+            command.Parameters.AddWithValue("@isCswi", personnel.IsCswi ? 1 : 0);
+            command.Parameters.AddWithValue("@id", personnel.Id);
+
+            var rowsAffected = await command.ExecuteNonQueryAsync();
             return rowsAffected > 0;
         }
 
@@ -212,7 +242,7 @@ namespace QualTrack.Data.Repositories
             var command = connection.CreateCommand();
             command.CommandText = @"
                 SELECT 
-                    p.id, p.dod_id, p.last_name, p.first_name, p.rate, p.rank,
+                    p.id, p.dod_id, p.last_name, p.first_name, p.rate, p.rank, p.is_sami, p.is_cswi,
                     q.id as qual_id, q.weapon, q.category, q.date_qualified,
                     qd.hqc_score, qd.nhqc_score, qd.hllc_score, qd.hpwc_score,
                     qd.rqc_score, qd.rlc_score, qd.spwc_score, qd.cof_score,
@@ -239,6 +269,8 @@ namespace QualTrack.Data.Repositories
                         FirstName = reader.GetString(reader.GetOrdinal("first_name")),
                         Rate = reader.GetString(reader.GetOrdinal("rate")),
                         Rank = reader.GetString(reader.GetOrdinal("rank")),
+                        IsSami = !reader.IsDBNull(reader.GetOrdinal("is_sami")) && reader.GetInt32(reader.GetOrdinal("is_sami")) == 1,
+                        IsCswi = !reader.IsDBNull(reader.GetOrdinal("is_cswi")) && reader.GetInt32(reader.GetOrdinal("is_cswi")) == 1,
                         Qualifications = new List<Qualification>()
                     };
                     
@@ -398,7 +430,7 @@ namespace QualTrack.Data.Repositories
             // Build dynamic query with filters
             var query = @"
                 SELECT DISTINCT
-                    p.id, p.dod_id, p.last_name, p.first_name, p.rate, p.rank,
+                    p.id, p.dod_id, p.last_name, p.first_name, p.rate, p.rank, p.is_sami, p.is_cswi,
                     q.id as qual_id, q.weapon, q.category, q.date_qualified,
                     qd.hqc_score, qd.nhqc_score, qd.hllc_score, qd.hpwc_score,
                     qd.rqc_score, qd.rlc_score, qd.spwc_score, qd.cof_score,
@@ -463,6 +495,8 @@ namespace QualTrack.Data.Repositories
                         FirstName = reader.GetString(reader.GetOrdinal("first_name")),
                         Rate = reader.GetString(reader.GetOrdinal("rate")),
                         Rank = reader.GetString(reader.GetOrdinal("rank")),
+                        IsSami = !reader.IsDBNull(reader.GetOrdinal("is_sami")) && reader.GetInt32(reader.GetOrdinal("is_sami")) == 1,
+                        IsCswi = !reader.IsDBNull(reader.GetOrdinal("is_cswi")) && reader.GetInt32(reader.GetOrdinal("is_cswi")) == 1,
                         Qualifications = new List<Qualification>()
                     };
                     
@@ -628,7 +662,7 @@ namespace QualTrack.Data.Repositories
             
             var dataQuery = @"
                 SELECT DISTINCT
-                    p.id, p.dod_id, p.last_name, p.first_name, p.rate, p.rank,
+                    p.id, p.dod_id, p.last_name, p.first_name, p.rate, p.rank, p.is_sami, p.is_cswi,
                     q.id as qual_id, q.weapon, q.category, q.date_qualified,
                     qd.hqc_score, qd.nhqc_score, qd.hllc_score, qd.hpwc_score,
                     qd.rqc_score, qd.rlc_score, qd.spwc_score, qd.cof_score,
@@ -673,6 +707,8 @@ namespace QualTrack.Data.Repositories
                         FirstName = reader.GetString(reader.GetOrdinal("first_name")),
                         Rate = reader.GetString(reader.GetOrdinal("rate")),
                         Rank = reader.GetString(reader.GetOrdinal("rank")),
+                        IsSami = !reader.IsDBNull(reader.GetOrdinal("is_sami")) && reader.GetInt32(reader.GetOrdinal("is_sami")) == 1,
+                        IsCswi = !reader.IsDBNull(reader.GetOrdinal("is_cswi")) && reader.GetInt32(reader.GetOrdinal("is_cswi")) == 1,
                         Qualifications = new List<Qualification>()
                     };
                     

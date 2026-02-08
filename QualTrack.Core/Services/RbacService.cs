@@ -37,6 +37,20 @@ namespace QualTrack.Core.Services
                     RbacPermission.ManageCrewServed,
                     RbacPermission.GeneratePdf
                 },
+                [RbacRole.Medical] = new HashSet<RbacPermission>
+                {
+                    RbacPermission.ViewDashboard,
+                    RbacPermission.ViewTrainingJacket,
+                    RbacPermission.ManageAdminForms,
+                    RbacPermission.GeneratePdf
+                },
+                [RbacRole.AAandE] = new HashSet<RbacPermission>
+                {
+                    RbacPermission.ViewDashboard,
+                    RbacPermission.ViewTrainingJacket,
+                    RbacPermission.ManageAdminForms,
+                    RbacPermission.GeneratePdf
+                },
                 [RbacRole.Viewer] = new HashSet<RbacPermission>
                 {
                     RbacPermission.ViewDashboard,

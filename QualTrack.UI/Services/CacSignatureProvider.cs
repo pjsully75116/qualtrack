@@ -1,9 +1,12 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using iText.Forms;
+using iText.Forms.Fields;
 using iText.Forms.Form.Element;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
@@ -110,7 +113,7 @@ namespace QualTrack.UI.Services
         {
             using var reader = new PdfReader(request.DocumentPath);
             using var outputStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
-            var signer = new PdfSigner(reader, outputStream, new StampingProperties());
+            var signer = new PdfSigner(reader, outputStream, new StampingProperties().UseAppendMode());
 
             var pageNumber = request.PageNumber ?? 1;
             var pageSize = signer.GetDocument().GetPage(pageNumber).GetPageSize();
@@ -119,6 +122,17 @@ namespace QualTrack.UI.Services
             var fieldName = string.IsNullOrWhiteSpace(request.SignatureFieldName)
                 ? $"Signature_{DateTime.Now:yyyyMMddHHmmss}"
                 : request.SignatureFieldName;
+
+            var candidateFieldNames = GetSignatureFieldCandidates(request.SignatureFieldName);
+            if (candidateFieldNames.Count > 0 &&
+                TryResolveSignatureAnchor(signer.GetDocument(), candidateFieldNames, out var anchorRect, out var anchorPage, out var isSignatureField, out var matchedFieldName))
+            {
+                rect = anchorRect;
+                pageNumber = anchorPage;
+                fieldName = isSignatureField && !string.IsNullOrWhiteSpace(matchedFieldName)
+                    ? matchedFieldName
+                    : $"Signature_{DateTime.Now:yyyyMMddHHmmss}";
+            }
 
             var displayName = string.IsNullOrWhiteSpace(request.SignerDisplayName)
                 ? cert.GetNameInfo(X509NameType.SimpleName, false)
@@ -142,6 +156,151 @@ namespace QualTrack.UI.Services
 
             var container = new CacSignatureContainer(cert);
             signer.SignExternalContainer(container, 8192);
+        }
+
+        private static bool TryResolveSignatureAnchor(
+            PdfDocument document,
+            IReadOnlyList<string> fieldNames,
+            out Rectangle rect,
+            out int pageNumber,
+            out bool isSignatureField,
+            out string? matchedFieldName)
+        {
+            rect = default;
+            pageNumber = 1;
+            isSignatureField = false;
+            matchedFieldName = null;
+
+            var form = PdfAcroForm.GetAcroForm(document, false);
+            if (form == null)
+            {
+                return false;
+            }
+
+            var fields = form.GetAllFormFields();
+            if (fields == null || fields.Count == 0)
+            {
+                return false;
+            }
+
+            PdfFormField? field = null;
+            foreach (var name in fieldNames)
+            {
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    continue;
+                }
+
+                if (fields.TryGetValue(name, out field))
+                {
+                    if (!IsSignedSignatureField(field))
+                    {
+                        matchedFieldName = name;
+                        break;
+                    }
+                    field = null;
+                    continue;
+                }
+
+                var normalizedTarget = NormalizeFieldName(name);
+                if (string.IsNullOrEmpty(normalizedTarget))
+                {
+                    continue;
+                }
+
+                var exactKey = fields.Keys.FirstOrDefault(key => NormalizeFieldName(key) == normalizedTarget);
+                if (!string.IsNullOrWhiteSpace(exactKey))
+                {
+                    fields.TryGetValue(exactKey, out field);
+                    if (field != null && !IsSignedSignatureField(field))
+                    {
+                        matchedFieldName = exactKey;
+                        break;
+                    }
+                    field = null;
+                    continue;
+                }
+
+                var containsKey = fields.Keys.FirstOrDefault(key => NormalizeFieldName(key).Contains(normalizedTarget, StringComparison.OrdinalIgnoreCase));
+                if (!string.IsNullOrWhiteSpace(containsKey))
+                {
+                    fields.TryGetValue(containsKey, out field);
+                    if (field != null && !IsSignedSignatureField(field))
+                    {
+                        matchedFieldName = containsKey;
+                        break;
+                    }
+                    field = null;
+                    continue;
+                }
+            }
+
+            if (field == null)
+            {
+                return false;
+            }
+
+            var widgets = field.GetWidgets();
+            if (widgets == null || widgets.Count == 0)
+            {
+                return false;
+            }
+
+            var widget = widgets[0];
+            rect = widget.GetRectangle().ToRectangle();
+            var widgetPage = widget.GetPage();
+            pageNumber = widgetPage != null ? document.GetPageNumber(widgetPage) : 1;
+            var fieldType = field.GetFormType();
+            isSignatureField = PdfName.Sig.Equals(fieldType);
+
+            return true;
+        }
+
+        private static bool IsSignedSignatureField(PdfFormField field)
+        {
+            if (field == null)
+            {
+                return false;
+            }
+
+            var fieldType = field.GetFormType();
+            if (!PdfName.Sig.Equals(fieldType))
+            {
+                return false;
+            }
+
+            var value = field.GetValue();
+            return value != null && !value.IsNull();
+        }
+
+        private static List<string> GetSignatureFieldCandidates(string? signatureFieldName)
+        {
+            if (string.IsNullOrWhiteSpace(signatureFieldName))
+            {
+                return new List<string>();
+            }
+
+            return signatureFieldName
+                .Split('|', StringSplitOptions.RemoveEmptyEntries)
+                .Select(name => name.Trim())
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static string NormalizeFieldName(string fieldName)
+        {
+            if (string.IsNullOrWhiteSpace(fieldName))
+            {
+                return string.Empty;
+            }
+
+            var cleaned = fieldName.Trim()
+                .Replace("{", string.Empty)
+                .Replace("}", string.Empty);
+
+            var chars = cleaned.Where(char.IsLetterOrDigit).ToArray();
+            return new string(chars).ToUpperInvariant();
         }
 
         private sealed class CacSignatureContainer : IExternalSignatureContainer

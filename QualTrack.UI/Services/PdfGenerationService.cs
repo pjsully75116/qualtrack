@@ -5,6 +5,7 @@ using System.Linq;
 using iTextSharp.text.pdf;
 using QualTrack.Core.Models;
 using QualTrack.UI;
+using QualTrack.Core.Services;
 
 namespace QualTrack.UI.Services
 {
@@ -16,7 +17,9 @@ namespace QualTrack.UI.Services
         public PdfGenerationService(string? templatePath = null, string? outputDirectory = null)
         {
             _templatePath = ResolveTemplatePath(templatePath);
-            _outputDirectory = outputDirectory ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Documents", "3591_1_Forms");
+            _outputDirectory = outputDirectory ?? StoragePathService.GetGeneratedDocsPath(
+                "3591_1_Forms",
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Documents", "3591_1_Forms"));
             // Ensure output directory exists
             Directory.CreateDirectory(_outputDirectory);
         }

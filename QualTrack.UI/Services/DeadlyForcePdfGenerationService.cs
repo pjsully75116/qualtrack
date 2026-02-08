@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using iTextSharp.text.pdf;
+using QualTrack.Core.Services;
 
 namespace QualTrack.UI.Services
 {
@@ -13,7 +14,8 @@ namespace QualTrack.UI.Services
         public DeadlyForcePdfGenerationService(string? templatePath = null, string? outputDirectory = null)
         {
             _templatePath = templatePath ?? ResolveTemplatePath();
-            _outputDirectory = outputDirectory ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Documents", "DeadlyForce_Forms");
+            _outputDirectory = outputDirectory ?? StoragePathService.GetPendingDocsPath(
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Documents", "DeadlyForce_Forms"));
 
             Directory.CreateDirectory(_outputDirectory);
         }
@@ -41,7 +43,7 @@ namespace QualTrack.UI.Services
                 SetFieldValue(fields, "Signature (Observer)", observerSignature);
                 SetFieldValue(fields, "Date (Observer)", observerDate.ToString("MM/dd/yyyy"));
 
-                stamper.FormFlattening = true;
+                SetFieldsReadOnly(fields);
                 return outputPath;
             }
             catch (Exception ex)
@@ -101,6 +103,26 @@ namespace QualTrack.UI.Services
 
             var repoCandidate = Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "Deadly Force Memo Qualtrack.pdf"));
             return repoCandidate;
+        }
+
+        private static void SetFieldsReadOnly(AcroFields fields)
+        {
+            if (fields?.Fields == null)
+            {
+                return;
+            }
+
+            foreach (var key in fields.Fields.Keys)
+            {
+                try
+                {
+                    fields.SetFieldProperty(key, "setfflags", PdfFormField.FF_READ_ONLY, null);
+                }
+                catch
+                {
+                    // Best-effort read-only; ignore individual failures.
+                }
+            }
         }
     }
 }

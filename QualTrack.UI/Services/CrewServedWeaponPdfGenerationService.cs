@@ -5,6 +5,7 @@ using System.Linq;
 using iTextSharp.text.pdf;
 using QualTrack.Core.Models;
 using QualTrack.UI.Models;
+using QualTrack.Core.Services;
 
 namespace QualTrack.UI.Services
 {
@@ -64,7 +65,9 @@ namespace QualTrack.UI.Services
             CrewServedWeaponPdfFieldMap? fieldMap = null)
         {
             _templatePath = ResolveTemplatePath(templatePath);
-            _outputDirectory = outputDirectory ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GeneratedForms");
+            _outputDirectory = outputDirectory ?? StoragePathService.GetGeneratedDocsPath(
+                "3591_2_Forms",
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GeneratedForms"));
             Directory.CreateDirectory(_outputDirectory);
             _fieldMap = fieldMap ?? new CrewServedWeaponPdfFieldMap();
         }
@@ -136,7 +139,7 @@ namespace QualTrack.UI.Services
                     SetFieldValueIfMapped(form, ResolvePattern(_fieldMap.HeavyTeP5Pattern, rowNumber), entry.HeavyTeP5?.ToString() ?? string.Empty);
                 }
 
-                stamper.FormFlattening = true;
+                SetFieldsReadOnly(form);
             }
 
             return outputPath;
@@ -262,6 +265,26 @@ namespace QualTrack.UI.Services
             }
 
             return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "3591_2QualTrack.pdf");
+        }
+
+        private static void SetFieldsReadOnly(AcroFields form)
+        {
+            if (form?.Fields == null)
+            {
+                return;
+            }
+
+            foreach (var key in form.Fields.Keys)
+            {
+                try
+                {
+                    form.SetFieldProperty(key, "setfflags", PdfFormField.FF_READ_ONLY, null);
+                }
+                catch
+                {
+                    // Best-effort read-only; ignore individual failures.
+                }
+            }
         }
     }
 }

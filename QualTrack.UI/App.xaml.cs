@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Threading;
+using QualTrack.Core.Services;
+using QualTrack.UI.Services;
 
 namespace QualTrack.UI
 {
@@ -26,6 +28,16 @@ namespace QualTrack.UI
                     "Unexpected Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 exArgs.Handled = true;
             };
+
+            var basePath = StorageSetupService.GetOrPromptForBasePath(Current?.MainWindow);
+            if (string.IsNullOrWhiteSpace(basePath))
+            {
+                MessageBox.Show("A shared storage location is required to run QualTrack.", "Setup Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Shutdown();
+                return;
+            }
+
+            StorageSetupService.InitializeStorage(basePath);
 
             // Initialize database
             using var dbContext = new QualTrack.Data.Database.DatabaseContext();

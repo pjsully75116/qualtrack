@@ -4,7 +4,7 @@
         Title="Dashboard Setup" Height="500" Width="400"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Icon="/QTv1.ico">
+        Icon="/QualTrackIcon.ico">
     
     <Grid Margin="20">
         <Grid.RowDefinitions>

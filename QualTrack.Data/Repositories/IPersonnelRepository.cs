@@ -14,6 +14,7 @@ namespace QualTrack.Data.Repositories
         Task<Personnel?> GetPersonnelByNameAndRateAsync(DatabaseContext dbContext, string lastName, string firstName, string rate);
         Task<int> AddPersonnelAsync(DatabaseContext dbContext, Personnel personnel);
         Task<bool> UpdatePersonnelAsync(DatabaseContext dbContext, Personnel personnel);
+        Task<bool> UpdatePersonnelFieldsAsync(DatabaseContext dbContext, Personnel personnel);
         Task<bool> DeletePersonnelAsync(DatabaseContext dbContext, int id);
         Task<bool> PersonnelExistsAsync(DatabaseContext dbContext, string dodId);
         Task<List<Personnel>> GetPersonnelWithQualificationsAsync(DatabaseContext dbContext);

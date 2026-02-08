@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using iTextSharp.text.pdf;
 using QualTrack.Core.Models;
+using QualTrack.Core.Services;
 
 namespace QualTrack.UI.Services
 {
@@ -13,7 +14,8 @@ namespace QualTrack.UI.Services
         public AAEPdfGenerationService(string? templatePath = null, string? outputDirectory = null)
         {
             _templatePath = templatePath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "5530_1 QualTrack.pdf");
-            _outputDirectory = outputDirectory ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Documents", "AAE_Forms");
+            _outputDirectory = outputDirectory ?? StoragePathService.GetPendingDocsPath(
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Documents", "AAE_Forms"));
             
             // Ensure output directory exists
             Directory.CreateDirectory(_outputDirectory);
@@ -57,7 +59,7 @@ namespace QualTrack.UI.Services
                 // Fill form fields based on the mapping guide
                 FillFormFields(fields, form, personnel, screener);
 
-                stamper.FormFlattening = true;
+                SetFieldsReadOnly(fields);
                 return outputPath;
             }
             catch (Exception ex)
@@ -310,6 +312,26 @@ namespace QualTrack.UI.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error setting field '{fieldName}': {ex.Message}");
+            }
+        }
+
+        private void SetFieldsReadOnly(AcroFields fields)
+        {
+            if (fields?.Fields == null)
+            {
+                return;
+            }
+
+            foreach (var key in fields.Fields.Keys)
+            {
+                try
+                {
+                    fields.SetFieldProperty(key, "setfflags", PdfFormField.FF_READ_ONLY, null);
+                }
+                catch
+                {
+                    // Best-effort read-only; ignore individual failures.
+                }
             }
         }
     }

@@ -9,6 +9,7 @@ using PdfSharpCore.Pdf;
 using PdfSharpCore.Pdf.IO;
 
 using QualTrack.Core.Models;
+using QualTrack.Core.Services;
 using System.Text.RegularExpressions;
 using Path = System.IO.Path;
 using System.Collections.Generic;
@@ -29,7 +30,8 @@ namespace QualTrack.Core.Services
 
         public DocumentService(string storagePath = "Documents", string? tesseractDataPath = null)
         {
-            _documentStoragePath = Path.GetFullPath(storagePath);
+            var resolvedStoragePath = StoragePathService.GetGeneratedDocsPath("documents", storagePath);
+            _documentStoragePath = Path.GetFullPath(resolvedStoragePath);
             
             // Use system Tesseract installation if available, otherwise fall back to local tessdata
             if (string.IsNullOrEmpty(tesseractDataPath))
@@ -579,40 +581,43 @@ namespace QualTrack.Core.Services
         /// <param name="pdfPath">Path to the PDF file</param>
         /// <param name="pageIndex">Page index (0-based)</param>
         /// <returns>Path to the generated image file</returns>
-        private async Task<string> RenderPdfPageAsImageAsync(string pdfPath, int pageIndex)
+        private Task<string> RenderPdfPageAsImageAsync(string pdfPath, int pageIndex)
         {
-            try
+            return Task.Run(() =>
             {
-                // For now, we'll use a simplified approach
-                // TODO: Implement proper PDF page rendering when a stable library is available
-                var tempPath = Path.GetTempPath();
-                var imagePath = Path.Combine(tempPath, $"pdf_page_{pageIndex}_{Guid.NewGuid()}.png");
-                
-                // Create a placeholder image for testing
-                using var bitmap = new System.Drawing.Bitmap(800, 1000);
-                using var graphics = System.Drawing.Graphics.FromImage(bitmap);
-                
-                // Set up graphics for high quality
-                graphics.Clear(System.Drawing.Color.White);
-                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                
-                using var font = new System.Drawing.Font("Arial", 12);
-                using var brush = new System.Drawing.SolidBrush(System.Drawing.Color.Black);
-                
-                // Draw placeholder text
-                var text = $"PDF Page {pageIndex + 1} - Rendering not yet implemented\n\nThis is a placeholder for PDF page rendering.\nThe actual PDF page content would be rendered here.\n\nFile: {Path.GetFileName(pdfPath)}";
-                graphics.DrawString(text, font, brush, new System.Drawing.RectangleF(50, 50, 700, 900));
-                
-                // Save the image
-                bitmap.Save(imagePath, System.Drawing.Imaging.ImageFormat.Png);
-                
-                return imagePath;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to render PDF page {pageIndex + 1} as image: {ex.Message}", ex);
-            }
+                try
+                {
+                    // For now, we'll use a simplified approach
+                    // TODO: Implement proper PDF page rendering when a stable library is available
+                    var tempPath = Path.GetTempPath();
+                    var imagePath = Path.Combine(tempPath, $"pdf_page_{pageIndex}_{Guid.NewGuid()}.png");
+                    
+                    // Create a placeholder image for testing
+                    using var bitmap = new System.Drawing.Bitmap(800, 1000);
+                    using var graphics = System.Drawing.Graphics.FromImage(bitmap);
+                    
+                    // Set up graphics for high quality
+                    graphics.Clear(System.Drawing.Color.White);
+                    graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                    
+                    using var font = new System.Drawing.Font("Arial", 12);
+                    using var brush = new System.Drawing.SolidBrush(System.Drawing.Color.Black);
+                    
+                    // Draw placeholder text
+                    var text = $"PDF Page {pageIndex + 1} - Rendering not yet implemented\n\nThis is a placeholder for PDF page rendering.\nThe actual PDF page content would be rendered here.\n\nFile: {Path.GetFileName(pdfPath)}";
+                    graphics.DrawString(text, font, brush, new System.Drawing.RectangleF(50, 50, 700, 900));
+                    
+                    // Save the image
+                    bitmap.Save(imagePath, System.Drawing.Imaging.ImageFormat.Png);
+                    
+                    return imagePath;
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Failed to render PDF page {pageIndex + 1} as image: {ex.Message}", ex);
+                }
+            });
         }
     }
 }

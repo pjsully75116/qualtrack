@@ -5,6 +5,8 @@ namespace QualTrack.Core.Models
         Admin,
         SAMI,
         CSWI,
+        Medical,
+        AAandE,
         Viewer
     }
 }

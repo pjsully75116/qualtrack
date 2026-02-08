@@ -2,6 +2,7 @@ using System;
 using System.Data.SQLite;
 using System.IO;
 using System.Threading;
+using QualTrack.Core.Services;
 using QualTrack.Core.Models;
 
 namespace QualTrack.Data.Database
@@ -15,7 +16,8 @@ namespace QualTrack.Data.Database
 
         public DatabaseContext(string dbPath = "qualtrack.db")
         {
-            _connectionString = $"Data Source={dbPath};Version=3;";
+            var resolvedPath = StoragePathService.GetDatabasePath(dbPath);
+            _connectionString = $"Data Source={resolvedPath};Version=3;";
         }
 
         /// <summary>
@@ -51,12 +53,38 @@ namespace QualTrack.Data.Database
             CreateQualificationSessionsTable(connection);
             CreateDD2760FormsTable(connection);
             CreateCrewServedWeaponSessionsTable(connection);
+            CreateInstructorDesignationsTable(connection);
+            CreateInstructorQualificationsTable(connection);
+            CreateSignatureQueueTable(connection);
             
             // Run database migrations
             RunDatabaseMigrations(connection);
             
             // Create indexes for performance
             CreateIndexes(connection);
+        }
+
+        private void CreateSignatureQueueTable(SQLiteConnection connection)
+        {
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                CREATE TABLE IF NOT EXISTS signature_queue (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    document_id INTEGER,
+                    document_path TEXT NOT NULL,
+                    form_type TEXT NOT NULL,
+                    personnel_id INTEGER,
+                    status TEXT NOT NULL,
+                    current_role TEXT NOT NULL,
+                    required_roles TEXT NOT NULL,
+                    completed_roles TEXT,
+                    claimed_by TEXT,
+                    claimed_at TEXT,
+                    last_action TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );";
+            command.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -144,6 +172,43 @@ namespace QualTrack.Data.Database
                     command.ExecuteNonQuery();
                     Console.WriteLine("Migration: Added crew_served_weapon_session_id column to qualifications table");
                 }
+
+                // Migration 10: Add SAMI/CSWI designation flags to personnel table if they don't exist
+                if (!ColumnExists(connection, "personnel", "is_sami"))
+                {
+                    var command = connection.CreateCommand();
+                    command.CommandText = "ALTER TABLE personnel ADD COLUMN is_sami INTEGER NOT NULL DEFAULT 0";
+                    command.ExecuteNonQuery();
+                    Console.WriteLine("Migration: Added is_sami column to personnel table");
+                }
+
+                if (!ColumnExists(connection, "personnel", "is_cswi"))
+                {
+                    var command = connection.CreateCommand();
+                    command.CommandText = "ALTER TABLE personnel ADD COLUMN is_cswi INTEGER NOT NULL DEFAULT 0";
+                    command.ExecuteNonQuery();
+                    Console.WriteLine("Migration: Added is_cswi column to personnel table");
+                }
+
+                // Migration 11: Add instructor designation/qualification tables if they don't exist
+                if (!TableExists(connection, "instructor_designations"))
+                {
+                    CreateInstructorDesignationsTable(connection);
+                    Console.WriteLine("Migration: Added instructor_designations table");
+                }
+
+                if (!TableExists(connection, "instructor_qualifications"))
+                {
+                    CreateInstructorQualificationsTable(connection);
+                    Console.WriteLine("Migration: Added instructor_qualifications table");
+                }
+
+                // Migration 12: Add signature queue table if it doesn't exist
+                if (!TableExists(connection, "signature_queue"))
+                {
+                    CreateSignatureQueueTable(connection);
+                    Console.WriteLine("Migration: Added signature_queue table");
+                }
             }
             catch (Exception ex)
             {
@@ -208,7 +273,9 @@ namespace QualTrack.Data.Database
                     last_name TEXT NOT NULL,
                     first_name TEXT NOT NULL,
                     rate TEXT NOT NULL,
-                    rank TEXT NOT NULL
+                    rank TEXT NOT NULL,
+                    is_sami INTEGER NOT NULL DEFAULT 0,
+                    is_cswi INTEGER NOT NULL DEFAULT 0
                 )";
             command.ExecuteNonQuery();
         }
@@ -226,6 +293,43 @@ namespace QualTrack.Data.Database
                     qualification_session_id INTEGER,
                     FOREIGN KEY (personnel_id) REFERENCES personnel(id),
                     FOREIGN KEY (qualification_session_id) REFERENCES qualification_sessions(id)
+                )";
+            command.ExecuteNonQuery();
+        }
+
+        private void CreateInstructorDesignationsTable(SQLiteConnection connection)
+        {
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                CREATE TABLE IF NOT EXISTS instructor_designations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    personnel_id INTEGER NOT NULL,
+                    role TEXT NOT NULL,
+                    designation_date TEXT NOT NULL,
+                    pdf_file_path TEXT,
+                    pdf_file_name TEXT,
+                    date_created TEXT NOT NULL,
+                    date_modified TEXT,
+                    UNIQUE(personnel_id, role),
+                    FOREIGN KEY (personnel_id) REFERENCES personnel(id)
+                )";
+            command.ExecuteNonQuery();
+        }
+
+        private void CreateInstructorQualificationsTable(SQLiteConnection connection)
+        {
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                CREATE TABLE IF NOT EXISTS instructor_qualifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    personnel_id INTEGER NOT NULL,
+                    role TEXT NOT NULL,
+                    qualification_date TEXT NOT NULL,
+                    qualification_type TEXT NOT NULL,
+                    pdf_file_path TEXT,
+                    pdf_file_name TEXT,
+                    date_created TEXT NOT NULL,
+                    FOREIGN KEY (personnel_id) REFERENCES personnel(id)
                 )";
             command.ExecuteNonQuery();
         }
@@ -589,6 +693,11 @@ namespace QualTrack.Data.Database
             // Audit log table indexes
             CreateIndexIfNotExists(connection, "idx_audit_log_timestamp", "audit_log", "timestamp");
             CreateIndexIfNotExists(connection, "idx_audit_log_user_id", "audit_log", "user_id");
+
+            // Signature queue indexes
+            CreateIndexIfNotExists(connection, "idx_signature_queue_status", "signature_queue", "status");
+            CreateIndexIfNotExists(connection, "idx_signature_queue_current_role", "signature_queue", "current_role");
+            CreateIndexIfNotExists(connection, "idx_signature_queue_document_id", "signature_queue", "document_id");
         }
 
         /// <summary>

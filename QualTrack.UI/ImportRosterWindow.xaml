@@ -1,0 +1,124 @@
+<Window x:Class="QualTrack.UI.ImportRosterWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Import Roster" Height="700" Width="900"
+        WindowStartupLocation="CenterOwner"
+        Icon="/QualTrackIcon.ico">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Roster Import" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="RosterFilePathTextBox" Grid.Column="0" Margin="0,0,10,0" IsReadOnly="True"/>
+            <Button Grid.Column="1" Content="Browse..." Click="BrowseRoster_Click" Padding="15,5"/>
+        </Grid>
+
+        <GroupBox Grid.Row="2" Header="Column Mapping" Margin="0,0,0,10">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="200"/>
+                </Grid.ColumnDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="DOD ID (optional):" Margin="0,5"/>
+                <ComboBox x:Name="MapDodIdComboBox" Grid.Row="0" Grid.Column="1" Margin="10,5"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Last Name:" Margin="0,5"/>
+                <ComboBox x:Name="MapLastNameComboBox" Grid.Row="1" Grid.Column="1" Margin="10,5"/>
+
+                <Label Grid.Row="1" Grid.Column="2" Content="First Name:" Margin="10,5,5,5"/>
+                <ComboBox x:Name="MapFirstNameComboBox" Grid.Row="1" Grid.Column="3" Margin="5,5,0,5"/>
+
+                <Label Grid.Row="2" Grid.Column="0" Content="Rate:" Margin="0,5"/>
+                <ComboBox x:Name="MapRateComboBox" Grid.Row="2" Grid.Column="1" Margin="10,5"/>
+
+                <Label Grid.Row="2" Grid.Column="2" Content="Rank:" Margin="10,5,5,5"/>
+                <ComboBox x:Name="MapRankComboBox" Grid.Row="2" Grid.Column="3" Margin="5,5,0,5"/>
+
+                <Label Grid.Row="3" Grid.Column="0" Content="Duty Section Type:" Margin="0,5"/>
+                <ComboBox x:Name="MapDutyTypeComboBox" Grid.Row="3" Grid.Column="1" Margin="10,5"/>
+
+                <Label Grid.Row="3" Grid.Column="2" Content="Duty Section Number:" Margin="10,5,5,5"/>
+                <ComboBox x:Name="MapDutyNumberComboBox" Grid.Row="3" Grid.Column="3" Margin="5,5,0,5"/>
+
+                <Label Grid.Row="4" Grid.Column="0" Content="Duty Section (single):" Margin="0,5"/>
+                <ComboBox x:Name="MapDutyCombinedComboBox" Grid.Row="4" Grid.Column="1" Margin="10,5"/>
+
+                <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,5,0,0" Foreground="Gray" TextWrapping="Wrap">
+                    Use either Duty Section Type/Number or a single Duty Section field (e.g., 1/3). If none are mapped, duty sections are not updated.
+                </TextBlock>
+            </Grid>
+        </GroupBox>
+
+        <Grid Grid.Row="3" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Label Grid.Column="0" Content="Duplicates:" Margin="0,5"/>
+            <ComboBox x:Name="DuplicateHandlingComboBox" Grid.Column="1" Margin="10,5" SelectionChanged="DuplicateHandlingComboBox_SelectionChanged">
+                <ComboBoxItem Content="Prompt/Preview"/>
+                <ComboBoxItem Content="Skip Existing"/>
+                <ComboBoxItem Content="Update Existing"/>
+            </ComboBox>
+            <Button Grid.Column="2" Content="Refresh Preview" Click="RefreshPreview_Click" Margin="10,5" Padding="15,5"/>
+        </Grid>
+
+        <DataGrid Grid.Row="4" x:Name="PreviewDataGrid"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  IsReadOnly="False"
+                  SelectionMode="Single"
+                  GridLinesVisibility="Horizontal"
+                  HeadersVisibility="Column"
+                  RowHeight="25"
+                  AlternatingRowBackground="LightGray">
+            <DataGrid.Columns>
+                <DataGridCheckBoxColumn Header="Include" Binding="{Binding Include}" Width="70"/>
+                <DataGridTextColumn Header="DOD ID" Binding="{Binding DODId}" Width="100"/>
+                <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="120"/>
+                <DataGridTextColumn Header="First Name" Binding="{Binding FirstName}" Width="120"/>
+                <DataGridTextColumn Header="Rate" Binding="{Binding Rate}" Width="60"/>
+                <DataGridTextColumn Header="Rank" Binding="{Binding Rank}" Width="60"/>
+                <DataGridTextColumn Header="Duty Section" Binding="{Binding DutySection}" Width="90"/>
+                <DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="100"/>
+                <DataGridTextColumn Header="Errors" Binding="{Binding Errors}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Import" Click="Import_Click" Margin="0,0,10,0" Padding="20,5"/>
+            <Button Content="Close" Click="Close_Click" Padding="20,5"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="6" x:Name="StatusTextBlock" Margin="0,10,0,0" Foreground="Gray"/>
+    </Grid>
+</Window>

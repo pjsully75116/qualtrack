@@ -4,6 +4,7 @@ using System.Linq;
 using iTextSharp.text.pdf;
 using QualTrack.Core.Models;
 using System.Collections.Generic;
+using QualTrack.Core.Services;
 
 namespace QualTrack.UI.Services
 {
@@ -15,7 +16,8 @@ namespace QualTrack.UI.Services
         public DD2760PdfGenerationService(string? templatePath = null, string? outputDirectory = null)
         {
             _templatePath = templatePath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dd2760_QualTrack.pdf");
-            _outputDirectory = outputDirectory ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Documents", "DD2760_Forms");
+            _outputDirectory = outputDirectory ?? StoragePathService.GetPendingDocsPath(
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Documents", "DD2760_Forms"));
             
             // Ensure output directory exists
             Directory.CreateDirectory(_outputDirectory);
@@ -58,7 +60,7 @@ namespace QualTrack.UI.Services
                 // Fill form fields based on the mapping guide
                 FillFormFields(fields, form, personnel);
 
-                stamper.FormFlattening = true;
+                SetFieldsReadOnly(fields);
                 return outputPath;
             }
             catch (Exception ex)
@@ -210,6 +212,26 @@ namespace QualTrack.UI.Services
 
             var chars = cleaned.Where(char.IsLetterOrDigit).ToArray();
             return new string(chars).ToUpperInvariant();
+        }
+
+        private static void SetFieldsReadOnly(AcroFields fields)
+        {
+            if (fields?.Fields == null)
+            {
+                return;
+            }
+
+            foreach (var key in fields.Fields.Keys)
+            {
+                try
+                {
+                    fields.SetFieldProperty(key, "setfflags", PdfFormField.FF_READ_ONLY, null);
+                }
+                catch
+                {
+                    // Best-effort read-only; ignore individual failures.
+                }
+            }
         }
 
         /// <summary>
